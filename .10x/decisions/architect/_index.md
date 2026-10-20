@@ -1,0 +1,8 @@
+# Architect — Index
+
+## Principles
+- Pure reducer core, thin I/O shell.
+- Local-only network surface.
+
+## Active features
+- [visual-agents-office](visual-agents-office.md) — ADR-001

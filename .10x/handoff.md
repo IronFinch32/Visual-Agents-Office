@@ -1,2 +1,2 @@
-# Handoff → Architect
-Build approved. Constraints: local only, Node stdlib, hooks as data source, canvas pixel-art UI. See spec + decisions/product-manager.
+# Handoff → Engineering Manager
+Design done: ADR-001 (hooks → local SSE server → canvas). Components in decisions/architect. Standards in decisions/staff-engineer.
