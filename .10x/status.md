@@ -18,3 +18,9 @@
 - [x] Phase 4: Implementation Complete (P1–P6)
 - [x] Phase 5: Verification Complete (28/28, demo + live OK, security approved)
 - [x] Phase 6: Delivery Complete — restart server to activate
+
+# Status — office-polish
+- [x] Phase 0: Brainstorming — `.10x/specs/2026-10-20-office-polish-design.md`
+- [x] Phase 1: Strategy Complete
+- [x] Phase 2: Design Complete (ADR-003)
+- [x] Phase 3: Planning Complete (U1–U5)
