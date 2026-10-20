@@ -1,2 +1,2 @@
-# Handoff → EM (project-offices)
-ADR-002: canvas per room in CSS grid; projectKey on server; subagent TTL change.
+# Handoff → SDE (project-offices)
+Do P1–P7 in order (decisions/senior-engineer/project-offices.md).
