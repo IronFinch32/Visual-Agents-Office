@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { extname, join, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createState, applyEvent, prune, snapshot } from './state.js';
@@ -16,8 +17,25 @@ const TYPES = {
 const LOCAL_ORIGIN = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/;
 const LOCAL_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/;
 
-export function createServer({ debug = false } = {}) {
-  const state = createState();
+// Walk up to the nearest folder containing .git so subfolders of a repo share one office.
+export function gitRootResolver(exists = existsSync) {
+  const cache = new Map();
+  return (cwd) => {
+    if (cache.has(cwd)) return cache.get(cwd);
+    let dir = cwd;
+    let root = cwd;
+    while (dir && dir !== dirname(dir)) {
+      if (exists(join(dir, '.git'))) { root = dir; break; }
+      dir = dirname(dir);
+    }
+    if (cache.size > 500) cache.clear();
+    cache.set(cwd, root);
+    return root;
+  };
+}
+
+export function createServer({ debug = false, projectRoot = gitRootResolver() } = {}) {
+  const state = createState({ projectRoot });
   const clients = new Set();
   let pending = null;
 

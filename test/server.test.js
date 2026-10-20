@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer } from '../server/server.js';
+import { createServer, gitRootResolver } from '../server/server.js';
 
 async function withServer(fn) {
   const { server } = createServer();
@@ -57,3 +57,10 @@ test('/stream sends a snapshot on connect', () => withServer(async (base) => {
   ctrl.abort();
   assert.match(text, /"agents":\[\]/);
 }));
+
+test('gitRootResolver finds the nearest .git folder, falls back to cwd', () => {
+  const resolve = gitRootResolver((p) => p === '/r/app/.git');
+  assert.equal(resolve('/r/app/web/src'), '/r/app');
+  assert.equal(resolve('/r/app'), '/r/app');
+  assert.equal(resolve('/tmp/x'), '/tmp/x');
+});

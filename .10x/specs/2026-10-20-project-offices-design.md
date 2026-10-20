@@ -23,7 +23,7 @@ Linking side sessions to parents; persisting rooms; drag-and-drop layout.
 - **Server (`state.js`)**: add `projectKey` (normalized cwd) and `project` (basename of key) on every agent; subagents inherit. `prune`: drop `SUBAGENT_LINGER_MS` (20 s) in favour of `SUBAGENT_DONE_TTL_MS` (10 min); `UserPromptSubmit` on a session removes its `done` subagents. Snapshot shape otherwise unchanged (additive).
 - **Web**:
   - `sprites.js` — pure drawing helpers (person, desk, plant, badge, bubble) on a given ctx.
-  - `room.js` — `createRoom(canvas, projectKey)`: layout of manager + worker desks, character walking (from room door), render loop step; `setAgents(list)`; `isEmpty()` once everyone left.
+  - `room.js` — `createRoom(canvas)`: layout of manager + worker desks, character walking (from room door), render loop step; `setAgents(list)`; `isEmpty()` once everyone left.
   - `building.js` — owns room DOM elements in `#building`, creates/removes rooms, focus mode, waiting banner; one shared `requestAnimationFrame` loop calling each room.
   - `app.js` — SSE, panel grouped by project, sound, title.
 - **Layout per room** (logical px): width = cols × 64 + margins, cols = clamp(ceil(sqrt(workers+2)·1.3), 3, 6). Managers row 56 px tall, worker rows 60 px. Canvas scales by integer factor to fit its CSS box; room CSS box size proportional to logical size (`aspect-ratio`) so small rooms take less space.

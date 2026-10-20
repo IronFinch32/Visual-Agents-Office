@@ -13,6 +13,7 @@
     <h1>Visual Agents Office</h1>
     <div class="counts" id="counts"></div>
     <div class="actions">
+      <button id="back" type="button" hidden>← Gebouw</button>
       <button id="sound" type="button" aria-pressed="false" title="Belletje als een agent op je wacht">🔕 Geluid uit</button>
       <button id="panelToggle" type="button" title="Lijst tonen/verbergen">☰</button>
     </div>
@@ -20,7 +21,8 @@
   <div id="offline" class="offline" hidden>Geen verbinding met de server — opnieuw verbinden…</div>
   <main class="layout">
     <section class="stage">
-      <canvas id="office" aria-label="Kantoor met agents"></canvas>
+      <div id="banner" class="banner" hidden></div>
+      <div id="building" class="building" aria-label="Gebouw met een kantoor per project"></div>
       <p class="empty" id="empty" hidden>Nog geen agents. Start een Claude Code sessie (en installeer de hooks met <code>npm run install-hooks</code>).</p>
     </section>
     <aside class="panel" id="panel">

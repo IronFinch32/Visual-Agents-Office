@@ -1,7 +1,8 @@
-import { createOffice, minutesSince } from './office.js';
+import { createBuilding } from './building.js';
+import { minutesSince } from './sprites.js';
 
 const $ = (id) => document.getElementById(id);
-const office = createOffice($('office'));
+const building = createBuilding($('building'), { banner: $('banner'), backButton: $('back') });
 const STATUS_LABEL = { working: 'werkt', waiting: 'wacht op jou', done: 'klaar', idle: 'idle' };
 const ORDER = { waiting: 0, working: 1, done: 2, idle: 3 };
 
@@ -53,7 +54,7 @@ function setSound(on) {
 function card(a, now) {
   const li = el('li', `card ${a.status}${a.kind === 'subagent' ? ' sub' : ''}`);
   const row = el('div', 'row');
-  row.append(el('span', `dot ${a.status}`), el('span', 'name', a.title || a.name));
+  row.append(el('span', `dot ${a.status}`), el('span', 'name', a.kind === 'session' ? (a.title || 'Manager') : a.name));
   row.append(el('span', 'status', `${STATUS_LABEL[a.status] || a.status} · ${minutesSince(a.statusSince, now)}`));
   li.append(row);
   if (a.status === 'waiting') li.append(el('div', 'reason', a.waitingReason || 'Wacht op je input'));
@@ -65,14 +66,28 @@ function card(a, now) {
 
 function renderPanel() {
   const now = Date.now() - skew;
-  const sessions = agents.filter((a) => a.kind === 'session')
-    .sort((a, b) => (ORDER[a.status] - ORDER[b.status]) || (a.startedAt - b.startedAt));
   const list = $('list');
   list.replaceChildren();
-  for (const s of sessions) {
-    list.append(card(s, now));
-    for (const sub of agents.filter((a) => a.parentId === s.id).sort((a, b) => a.startedAt - b.startedAt)) {
-      list.append(card(sub, now));
+  const projects = new Map();
+  for (const a of agents) {
+    const key = a.projectKey || 'unknown';
+    if (!projects.has(key)) projects.set(key, { key, name: a.project || key, agents: [] });
+    projects.get(key).agents.push(a);
+  }
+  const rank = (p) => Math.min(...p.agents.map((a) => ORDER[a.status] ?? 9));
+  for (const p of [...projects.values()].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))) {
+    const head = el('li', 'project');
+    head.append(el('span', null, p.name), el('span', null, `${p.agents.length} agent${p.agents.length === 1 ? '' : 's'}`));
+    head.title = p.key;
+    head.addEventListener('click', () => building.focus(p.key));
+    list.append(head);
+    const sessions = p.agents.filter((a) => a.kind === 'session')
+      .sort((a, b) => (ORDER[a.status] - ORDER[b.status]) || (a.startedAt - b.startedAt));
+    for (const s of sessions) {
+      list.append(card(s, now));
+      for (const sub of p.agents.filter((a) => a.parentId === s.id).sort((a, b) => a.startedAt - b.startedAt)) {
+        list.append(card(sub, now));
+      }
     }
   }
 
@@ -98,7 +113,7 @@ function onSnapshot(data) {
   for (const id of waitingNow) if (!wasWaiting.has(id)) newlyWaiting = true;
   wasWaiting.clear();
   for (const id of waitingNow) wasWaiting.add(id);
-  office.setAgents(agents, data.now);
+  building.setAgents(agents, data.now);
   renderPanel();
   if (newlyWaiting) chime();
 }

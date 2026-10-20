@@ -9,7 +9,13 @@ Een pixel-art kantoor dat live laat zien welke Claude Code agents er draaien, wa
 | 🟩 Klaar | handen achter het hoofd, koffie, groen ✓ |
 | ⚪ Idle | zzz |
 
-Subagents (Explore, general-purpose, …) staan als kleine collega's met een pet in de kleur van hun "baas" naast het bureau. Een sessie die stopt, loopt de deur uit.
+**Een kantoor per project.** Elke projectmap (git-root; worktrees tellen mee met hun repo) is een kamer in het gebouw:
+- bovenin op het paarse tapijt zitten de **sessies als managers**;
+- daaronder heeft **elke subagent een eigen bureau**, met een pet en bureaurand in de kleur van zijn manager, een naambordje (Explore, Plan, …) en een ballon met wat hij doet;
+- klare subagents blijven met ✓ en koffie zitten tot hun sessie een nieuwe opdracht krijgt (of 10 minuten);
+- de kamer groeit mee met het team; een kamer met iemand die wacht knippert rood.
+
+Klik op een kamer om in te zoomen (`Esc` of "← Gebouw" om terug te gaan). Wacht er iemand in een ander kantoor, dan zie je bovenin een rode melding waarmee je er direct heen springt. Een sessie die stopt, loopt de deur uit; een lege kamer verdwijnt.
 
 ## Gebruik
 

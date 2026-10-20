@@ -3,13 +3,17 @@
 
 export const LIMITS = { task: 140, activity: 80, reason: 120, name: 40 };
 export const STALE_MS = 30 * 60 * 1000;
-export const SUBAGENT_LINGER_MS = 20 * 1000;
+export const SUBAGENT_DONE_TTL_MS = 10 * 60 * 1000;
 
 const WAITING_TOOLS = new Set(['AskUserQuestion', 'ExitPlanMode']);
 const WAITING_NOTIFICATIONS = new Set(['permission_prompt', 'idle_prompt', 'elicitation_dialog']);
 
-export function createState() {
-  return { agents: new Map() };
+/**
+ * projectRoot(cwd) maps a working directory to its project folder (e.g. the git root).
+ * Injected so this module stays free of I/O.
+ */
+export function createState({ projectRoot = (cwd) => cwd } = {}) {
+  return { agents: new Map(), projectRoot };
 }
 
 export function truncate(value, max) {
@@ -22,6 +26,20 @@ function basename(p) {
   if (!p) return '';
   const parts = String(p).split(/[\\/]/).filter(Boolean);
   return parts[parts.length - 1] || '';
+}
+
+// Sessions in a worktree belong to the same project as the main checkout.
+export function projectKeyFor(cwd) {
+  if (!cwd) return 'unknown';
+  let key = String(cwd).replace(/[\\/]+$/, '');
+  const m = /^(.*?)[\\/]\.(?:claude[\\/])?worktrees[\\/]/.exec(key + '/');
+  if (m && m[1]) key = m[1];
+  return key || 'unknown';
+}
+
+function setProject(state, a, cwd) {
+  a.projectKey = projectKeyFor(cwd && state.projectRoot(cwd));
+  a.project = truncate(basename(a.projectKey) || 'onbekend', LIMITS.name);
 }
 
 function host(url) {
@@ -76,11 +94,14 @@ function sessionAgent(state, evt, now) {
       updatedAt: now,
       statusSince: now,
     };
+    setProject(state, a, evt.cwd);
     state.agents.set(id, a);
   }
   if (evt.cwd && evt.cwd !== a.cwd) {
     a.cwd = evt.cwd;
     a.name = truncate(basename(evt.cwd), LIMITS.name);
+    // A `cd` inside a session must not move it to another office; only a (re)start or a first real cwd does.
+    if (evt.hook_event_name === 'SessionStart' || a.projectKey === 'unknown') setProject(state, a, evt.cwd);
   }
   if (evt.session_title) a.title = truncate(evt.session_title, LIMITS.name);
   return a;
@@ -109,6 +130,8 @@ function subAgent(state, evt, parent, now) {
     state.agents.set(id, a);
   }
   if (evt.agent_type) a.name = truncate(evt.agent_type, LIMITS.name);
+  a.projectKey = parent.projectKey;
+  a.project = parent.project;
   return a;
 }
 
@@ -143,6 +166,12 @@ export function applyEvent(state, evt, now = Date.now()) {
       if (target === session && session.status === 'done') setStatus(session, 'idle', now);
       break;
     case 'UserPromptSubmit':
+      if (target === session) {
+        // A new prompt starts a new job: the finished team goes home.
+        for (const [id, a] of state.agents) {
+          if (a.parentId === session.id && a.status === 'done') state.agents.delete(id);
+        }
+      }
       setStatus(target, 'working', now);
       target.task = truncate(evt.prompt, LIMITS.task);
       target.activity = 'Denkt na';
@@ -211,7 +240,7 @@ export function prune(state, now = Date.now()) {
   let changed = false;
   for (const [id, a] of state.agents) {
     const stale = now - a.updatedAt > STALE_MS;
-    const finishedSub = a.kind === 'subagent' && a.status === 'done' && now - a.statusSince > SUBAGENT_LINGER_MS;
+    const finishedSub = a.kind === 'subagent' && a.status === 'done' && now - a.statusSince > SUBAGENT_DONE_TTL_MS;
     const orphan = a.kind === 'subagent' && !state.agents.has(a.parentId);
     if (stale || finishedSub || orphan) {
       state.agents.delete(id);

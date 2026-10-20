@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createState, applyEvent, prune, snapshot, describeTool, truncate, STALE_MS, SUBAGENT_LINGER_MS } from '../server/state.js';
+import { createState, applyEvent, prune, snapshot, describeTool, truncate, STALE_MS, SUBAGENT_DONE_TTL_MS, projectKeyFor } from '../server/state.js';
 
 const S = { session_id: 's1', cwd: '/Users/x/code/my-app' };
 const ev = (name, extra = {}) => ({ ...S, hook_event_name: name, ...extra });
@@ -97,8 +97,8 @@ test('prune removes stale sessions, finished subagents after linger, orphans', (
   const st = createState();
   applyEvent(st, ev('SubagentStart', { agent_id: 'a1' }), 0);
   applyEvent(st, ev('SubagentStop', { agent_id: 'a1' }), 1000);
-  assert.equal(prune(st, 1000 + SUBAGENT_LINGER_MS - 1), false);
-  assert.equal(prune(st, 1000 + SUBAGENT_LINGER_MS + 1), true);
+  assert.equal(prune(st, 1000 + SUBAGENT_DONE_TTL_MS - 1), false);
+  assert.equal(prune(st, 1000 + SUBAGENT_DONE_TTL_MS + 1), true);
   assert.equal(st.agents.has('s1:a1'), false);
   assert.equal(prune(st, 1000 + STALE_MS + 1), true);
   assert.equal(st.agents.size, 0);
@@ -128,4 +128,43 @@ test('describeTool covers common tools and MCP', () => {
   assert.equal(describeTool('mcp__github__create_pr', {}), 'create pr · github');
   assert.equal(describeTool('mcp__Claude_Browser__browser_batch', {}), 'browser batch · Claude Browser');
   assert.equal(describeTool('Weird', null), 'Gebruikt Weird');
+});
+
+test('projectKeyFor normalizes worktrees and trailing slashes', () => {
+  assert.equal(projectKeyFor('/Users/x/code/app'), '/Users/x/code/app');
+  assert.equal(projectKeyFor('/Users/x/code/app/'), '/Users/x/code/app');
+  assert.equal(projectKeyFor('/Users/x/code/app/.claude/worktrees/feat-1'), '/Users/x/code/app');
+  assert.equal(projectKeyFor('/Users/x/code/app/.claude/worktrees/feat-1/src'), '/Users/x/code/app');
+  assert.equal(projectKeyFor('/Users/x/code/app/.worktrees/w2'), '/Users/x/code/app');
+  assert.equal(projectKeyFor(''), 'unknown');
+  assert.equal(projectKeyFor(undefined), 'unknown');
+});
+
+test('sessions in the same project (incl. worktree) share projectKey; subagents inherit it', () => {
+  const st = createState();
+  applyEvent(st, { session_id: 'a', cwd: '/r/app', hook_event_name: 'SessionStart' }, 1);
+  applyEvent(st, { session_id: 'b', cwd: '/r/app/.claude/worktrees/x', hook_event_name: 'SessionStart' }, 1);
+  applyEvent(st, { session_id: 'b', cwd: '/r/app/.claude/worktrees/x', hook_event_name: 'SubagentStart', agent_id: 's', agent_type: 'Explore' }, 2);
+  assert.equal(get(st, 'a').projectKey, get(st, 'b').projectKey);
+  assert.equal(get(st, 'b:s').projectKey, '/r/app');
+  assert.equal(get(st, 'b:s').project, 'app');
+});
+
+test('finished subagents stay until the next prompt of their session', () => {
+  const st = createState();
+  applyEvent(st, ev('SubagentStart', { agent_id: 'a1' }), 1);
+  applyEvent(st, ev('SubagentStart', { agent_id: 'a2' }), 1);
+  applyEvent(st, ev('SubagentStop', { agent_id: 'a1' }), 2);
+  assert.equal(prune(st, 60_000), false, 'still visible a minute later');
+  applyEvent(st, ev('UserPromptSubmit', { prompt: 'next' }), 3);
+  assert.equal(st.agents.has('s1:a1'), false, 'done subagent cleared');
+  assert.equal(st.agents.has('s1:a2'), true, 'running subagent kept');
+});
+
+test('cd inside a session keeps it in the same office; projectRoot is applied', () => {
+  const st = createState({ projectRoot: (cwd) => cwd.replace(/\/src.*$/, '') });
+  applyEvent(st, { session_id: 'a', cwd: '/r/app/src/lib', hook_event_name: 'SessionStart' }, 1);
+  assert.equal(get(st, 'a').projectKey, '/r/app');
+  applyEvent(st, { session_id: 'a', cwd: '/r/other', hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: {} }, 2);
+  assert.equal(get(st, 'a').projectKey, '/r/app');
 });

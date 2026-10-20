@@ -56,7 +56,74 @@ button[aria-pressed="true"] { border-color: var(--done); }
 }
 .layout { flex: 1; display: flex; min-height: 0; }
 .stage { flex: 1; position: relative; min-width: 0; }
-canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.building {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-content: safe center;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+  /* hallway tiles */
+  background-color: #3a3d55;
+  background-image:
+    linear-gradient(45deg, #34374d 25%, transparent 25%, transparent 75%, #34374d 75%),
+    linear-gradient(45deg, #34374d 25%, transparent 25%, transparent 75%, #34374d 75%);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+}
+.room {
+  display: flex;
+  flex-direction: column;
+  border: 3px solid #11131d;
+  background: #11131d;
+  cursor: zoom-in;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .35);
+}
+.building.focused .room { cursor: zoom-out; }
+.building.focused .room:not(.focus) { display: none; }
+.room.waiting { border-color: var(--waiting); animation: roomblink 1s steps(2) infinite; }
+@keyframes roomblink { 50% { border-color: #11131d; } }
+.room header {
+  /* the canvas decides the room width; the header never widens it */
+  width: 0;
+  min-width: 100%;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+  background: var(--panel);
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+}
+.room-title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-counts { display: flex; gap: 6px; flex: none; font-size: 13px; }
+.chip { padding: 0 5px; color: #11131d; }
+.chip.waiting { background: var(--waiting); color: #fff; }
+.chip.working { background: var(--working); }
+.chip.done { background: var(--done); }
+.room canvas { display: block; image-rendering: pixelated; }
+.banner {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  background: var(--waiting);
+  color: #fff;
+  padding: 4px 12px;
+  font-size: 15px;
+  max-width: calc(100% - 32px);
+  animation: pulse 1s steps(2) infinite;
+}
+.banner-link { background: none; border: 0; color: #fff; text-decoration: underline; padding: 0; font-size: 15px; }
+.project { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin: 6px 2px 0; display: flex; justify-content: space-between; cursor: pointer; }
 .empty {
   position: absolute;
   left: 50%;
