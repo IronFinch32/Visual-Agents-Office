@@ -4,5 +4,5 @@
 - [x] Phase 2: Design Complete (ADR-001)
 - [x] Phase 3: Planning Complete (T1–T7 in decisions/engineering-manager)
 - [x] Phase 4: Implementation Complete (T1–T6; T7 live check pending user approval to install hooks)
-- [ ] Phase 5: Verification
+- [x] Phase 5: Verification Complete (23/23 tests, demo OK, security approved; live check pending)
 - [ ] Phase 6: Delivery

@@ -1,2 +1,2 @@
-# Handoff → QA / Security
-Built per decisions/sde. Test: npm test, npm run demo + browser. Review: server.js network surface, install.js settings editing.
+# Handoff → DevOps / SRE
+Release-ready for local use. No deploy target; run via npm start. Live hook check pending user approval.
