@@ -26,6 +26,7 @@
     "hooks/",
     "web/",
     "scripts/",
+    "service/",
     "README.md",
     "LICENSE"
   ],
@@ -38,6 +39,8 @@
     "uninstall-hooks": "node bin/visual-agents-office.js uninstall",
     "install-hooks": "node bin/visual-agents-office.js setup",
     "demo": "node bin/visual-agents-office.js demo",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "autostart": "node bin/visual-agents-office.js autostart",
+    "autostart:off": "node bin/visual-agents-office.js autostart --off"
   }
 }

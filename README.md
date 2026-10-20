@@ -35,6 +35,24 @@ npm start
 
 Er zijn geen dependencies, dus `npm install` is niet nodig.
 
+### Altijd laten draaien
+
+Laat het kantoor automatisch starten bij elke login, zodat je alleen nog http://127.0.0.1:4747 hoeft te openen:
+
+```bash
+npx github:IronFinch32/Visual-Agents-Office autostart
+```
+
+Vanuit een lokale kopie kan het ook met `npm run autostart`. Uitzetten doe je met `… autostart --off` (of `npm run autostart:off`).
+
+- **macOS:** een LaunchAgent (`~/Library/LaunchAgents/com.visualagentsoffice.plist`) die de server na een crash opnieuw start.
+- **Linux:** een systemd user-service (`~/.config/systemd/user/visual-agents-office.service`).
+- **Windows:** een Taakplanner-taak bij aanmelden (niet getest).
+
+Startte je met `npx`, dan wordt de app eerst gekopieerd naar `~/.visual-agents-office/app`. Vanuit een clone draait de service direct uit die map: verplaats je de map, draai `autostart` dan opnieuw. Doe dat ook na een update of als je van Node-versie wisselt. Het log staat in `~/.visual-agents-office/office.log`. Draait er al een kantoor dat je met de hand hebt gestart, dan wacht de service tot dat stopt en neemt het dan over.
+
+Docker is bewust niet gebruikt: de server moet je projectmappen kunnen zien (om ze per git-root te groeperen) en de hooks moeten in je eigen `~/.claude/settings.json` staan. Zie `.10x/adrs/004-autostart-via-os-service.md`.
+
 ## Commando's
 
 | Commando | Wat het doet |
@@ -43,6 +61,7 @@ Er zijn geen dependencies, dus `npm install` is niet nodig.
 | `npm run setup` (of `… setup`) | Installeert alleen de hooks. |
 | `npm run uninstall-hooks` (of `… uninstall`) | Verwijdert de hooks weer. |
 | `npm run demo` (of `… demo`) | Stuurt nep-agents naar een draaiend kantoor, om het uit te proberen. |
+| `npm run autostart` (of `… autostart`) | Start het kantoor automatisch bij elke login. Met `--off` zet je dat weer uit. |
 | `npm test` | Draait de tests. |
 
 Opties: `--port <n>` (standaard 4747, of de omgevingsvariabele `VAO_PORT`), `--no-open` (browser niet openen) en `--yes` (hooks installeren zonder te vragen). Met npm geef je ze door na `--`, bijvoorbeeld `npm start -- --port 5000`. Gebruik bij een andere poort dezelfde `--port` voor `setup`.
@@ -81,7 +100,8 @@ Windows is niet getest. De hooks gebruiken `sh`-syntax en `curl`.
 ## Project
 
 ```
-bin/        startcommando (start, setup, uninstall, demo)
+bin/        startcommando (start, setup, uninstall, demo, autostart)
+service/    autostart via launchd / systemd / Taakplanner
 server/     HTTP + SSE server en de status-state-machine
 hooks/      installer voor ~/.claude/settings.json
 web/        de browser-app (canvas, geen build-stap)

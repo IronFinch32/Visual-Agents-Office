@@ -4,12 +4,14 @@
 //   visual-agents-office setup      install the Claude Code hooks
 //   visual-agents-office uninstall  remove the hooks
 //   visual-agents-office demo       send simulated agents to a running office
+//   visual-agents-office autostart  start the office at every login (--off to remove)
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createServer } from '../server/server.js';
 import { hooksInstalled, updateSettings, DEFAULT_SETTINGS } from '../hooks/install.js';
+import { enableAutostart, disableAutostart } from '../service/autostart.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -25,6 +27,8 @@ Gebruik:
   visual-agents-office setup       installeer de Claude Code hooks
   visual-agents-office uninstall   verwijder de hooks
   visual-agents-office demo        stuur nep-agents naar een draaiend kantoor
+  visual-agents-office autostart   start het kantoor automatisch bij elke login
+  visual-agents-office autostart --off   zet automatisch starten weer uit
 
 Opties:
   --port <n>    poort (standaard 4747, of VAO_PORT)
@@ -69,8 +73,13 @@ async function alreadyRunning() {
   }
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function start() {
-  await ensureHooks();
+  const service = args.includes('--service');
+  if (!service) await ensureHooks();
+  // As a login service, don't fight an office someone started by hand: take over once it stops.
+  if (service) while (await alreadyRunning()) await sleep(30_000);
   if (await alreadyRunning()) {
     console.log(`\nHet kantoor draait al op ${url}`);
     if (!args.includes('--no-open')) openBrowser(url);
@@ -101,6 +110,14 @@ try {
     case 'setup': updateSettings('install', { port }); break;
     case 'uninstall': updateSettings('uninstall', { port }); break;
     case 'demo': demo(); break;
+    case 'autostart':
+      if (args.includes('--off')) {
+        disableAutostart({ port });
+      } else {
+        await ensureHooks();
+        enableAutostart({ root: ROOT, port });
+      }
+      break;
     case 'help': console.log(HELP); break;
     default:
       console.error(`Onbekend commando: ${command}\n\n${HELP}`);
