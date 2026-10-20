@@ -39,3 +39,6 @@
 # Status — codex-support
 - [x] Spec + ADR-005
 - [x] Implementation + verification (40/40, menu in pty, visual); real Codex untested
+
+# Status — tenx-mode
+- [x] Spec, ADR-006, plan
