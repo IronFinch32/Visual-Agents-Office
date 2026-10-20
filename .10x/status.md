@@ -31,3 +31,6 @@
 # Status — distribution
 - [x] CLI + README + LICENSE, verified from clean clone
 - [x] Pushed to https://github.com/IronFinch32/Visual-Agents-Office (public, MIT); npx from GitHub verified
+
+# Status — autostart
+- [x] Design (ADR-004)
