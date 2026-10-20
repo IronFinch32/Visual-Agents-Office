@@ -16,3 +16,4 @@
 - [x] Phase 2: Design Complete (ADR-002)
 - [x] Phase 3: Planning Complete (P1–P7)
 - [x] Phase 4: Implementation Complete (P1–P6)
+- [x] Phase 5: Verification Complete (28/28, demo + live OK, security approved)
