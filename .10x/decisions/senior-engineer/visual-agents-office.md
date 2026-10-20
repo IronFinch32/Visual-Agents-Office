@@ -1,0 +1,6 @@
+# Senior Engineer — visual-agents-office
+- **T2:** Map keyed by agent id; session id = `session_id`; subagent id = `session_id:agent_id`. `applyEvent` returns `true` if changed. `describeTool`: Bash→description||command, Edit/Write/Read→verb + basename, Grep/Glob→pattern, Agent/Task→subagent_type + description, WebFetch/WebSearch→host/query, mcp__x__y→"y (x)".
+- **T3:** SSE: send `event: snapshot` on connect and after changes (coalesce with 100 ms timer). Heartbeat comment every 15 s. Prune every 30 s.
+- **T4:** Hook entry = `{matcher?, hooks:[{type:'command', command: CMD, timeout: 2}]}` per event. Identify ours by `CMD` containing `127.0.0.1:4747/event`. Backup to `settings.json.vao-backup-<ts>`. Accept `--settings <path>` for tests.
+- **T5:** Logical canvas 480×270 scaled by integer factor; procedurally drawn pixel sprites (no image assets). Desk slots grid 4×N; layout sorted by project then start time. Characters lerp to target; entering = walk from door, leaving = walk to door then delete. Text overlays (bubbles/names) drawn at device resolution for readability.
+- **Tricky:** AskUserQuestion fires PreToolUse → waiting; its PostToolUse returns to working. PermissionRequest followed by PostToolUse (granted) or nothing (denied → next event).

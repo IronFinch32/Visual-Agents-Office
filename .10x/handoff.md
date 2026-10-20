@@ -1,2 +1,2 @@
-# Handoff → Engineering Manager
-Design done: ADR-001 (hooks → local SSE server → canvas). Components in decisions/architect. Standards in decisions/staff-engineer.
+# Handoff → SDE
+Implement T1–T6 in order per decisions/senior-engineer. T7 needs user approval to install hooks into ~/.claude/settings.json.
