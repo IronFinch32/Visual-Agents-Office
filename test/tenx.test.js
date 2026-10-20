@@ -165,3 +165,53 @@ test('bookkeeping writes (status.md, handoff.md) keep the current role', () => {
     { role: 'qa', guessed: false },
   );
 });
+
+test('10x-Team-Plus: skills, UX/UI folders and guesses per department', async () => {
+  const { isPlusSignal, FLAVORS, lastPhase } = await import('../server/tenx.js');
+  assert.equal(roleFromSkill('10x-Team-Plus:ux-designer'), 'ux-designer');
+  assert.equal(roleFromSkill('10x-Team-Plus:ui-designer'), 'ui-designer');
+  assert.equal(roleFromSkill('10x-Team-Plus:qa-engineer'), 'qa');
+  assert.equal(roleFromSkill('10x-Team-Plus:10x-team'), null);
+  assert.equal(roleFromPath('/r/.10x/decisions/ux-designer/flows.md'), 'ux-designer');
+  assert.equal(isPlusSignal({ skill: '10x-Team-Plus:sde' }), true);
+  assert.equal(isPlusSignal({ skill: '10x-Team:sde' }), false);
+  assert.equal(isPlusSignal({ path: '/r/.10x/decisions/ui-designer/x.md' }), true);
+  assert.equal(isPlusSignal({ statusText: '- [ ] Phase 7: Delivery' }), true);
+  assert.equal(lastPhase('plus'), 7);
+  assert.equal(FLAVORS.plus.implPhase, 5);
+  assert.equal(guessRole(2, 'Write', { file_path: '/r/docs/flows.md' }, 'plus'), 'ux-designer');
+  assert.equal(guessRole(2, 'Write', { file_path: '/r/src/theme/tokens.css' }, 'plus'), 'ui-designer');
+  assert.equal(guessRole(3, 'Write', {}, 'plus'), 'architect');
+  assert.equal(guessRole(5, 'Edit', { file_path: '/r/src/a.ts' }, 'plus'), 'sde');
+  assert.equal(guessRole(7, 'Write', { file_path: '/r/ci.yml' }, 'plus'), 'devops');
+  assert.equal(guessRole(3, 'Write', {}, 'classic'), 'engineering-manager', 'classic unchanged');
+});
+
+test('Plus project: flavor detected from folders, phases 0–7, gate before phase 5', () => {
+  const { root, x } = project();
+  mkdirSync(join(x, 'decisions', 'ux-designer'), { recursive: true });
+  writeFileSync(join(x, 'adrs', '001-a.md'), '# ADR-001');
+  writeFileSync(join(x, 'status.md'), [0, 1, 2, 3].map((n) => `- [x] Phase ${n}`).join('\n'));
+  const tenx = createTenx({ fs: nodeFs });
+  tenx.onEvent({ session_id: 's', hook_event_name: 'SessionStart' }, agent(root));
+  let snap = tenx.snapshot()[root];
+  assert.equal(snap.flavor, 'plus');
+  assert.equal(snap.phase, 4);
+  tenx.onEvent(pre('Edit', { file_path: join(root, 'src', 'a.ts') }), agent(root));
+  snap = tenx.snapshot()[root];
+  assert.match(snap.gate.reason, /fase 4/, 'planning is still before implementation in Plus');
+  assert.equal(snap.roles.s.role, 'engineering-manager');
+  writeFileSync(join(x, 'status.md'), [0, 1, 2, 3, 4, 5, 6, 7].map((n) => `- [x] Phase ${n}`).join('\n'));
+  tenx.refresh(root);
+  assert.equal(tenx.snapshot()[root].complete, true);
+});
+
+test('Classic project stays classic and completes at phase 6', () => {
+  const { root, x } = project();
+  writeFileSync(join(x, 'status.md'), [0, 1, 2, 3, 4, 5, 6].map((n) => `- [x] Phase ${n}`).join('\n'));
+  const tenx = createTenx({ fs: nodeFs });
+  tenx.onEvent({ session_id: 's', hook_event_name: 'SessionStart' }, agent(root));
+  const snap = tenx.snapshot()[root];
+  assert.equal(snap.flavor, 'classic');
+  assert.equal(snap.complete, true);
+});

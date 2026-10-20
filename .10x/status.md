@@ -46,3 +46,4 @@
 
 # Status — tenx-plus
 - [x] Design (ADR-007)
+- [x] Implementation + verification (53/53, Plus demo)

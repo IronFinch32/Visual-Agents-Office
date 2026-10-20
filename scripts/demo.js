@@ -34,7 +34,7 @@ async function spawn(s, id, type, description) {
 }
 
 // The /10x-team run happens in parallel in its own department office.
-const tenxRun = runTenxDemo(send);
+const tenxRun = runTenxDemo(send, { flavor: process.env.VAO_DEMO_10X === 'classic' ? 'classic' : 'plus' });
 
 for (const s of [web, webWt, api, docs, cx, cxApi]) { await ev(s, 'SessionStart', { source: 'startup' }); await sleep(300); }
 

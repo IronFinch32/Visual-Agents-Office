@@ -24,7 +24,9 @@ Gebruik je de [10x-team plugin](https://github.com/Jaan-Mustafa/10x-Team), dan k
 - **Klik op een teamlid** om het begin van zijn nieuwste beslissing in de zijbalk te lezen.
 - Echte subagents (Explore e.d.) werken op de **werkvloer** onder de afdelingen.
 
-Het kantoor is niet afhankelijk van de plugin: het leest alleen (read-only) de `.10x/`-map van je project en de skill-namen uit de hooks. Projecten zonder `.10x/` krijgen gewoon het normale kantoor. `npm run demo` speelt ook een complete 10x-run af.
+**10x-Team-Plus** (met UX en UI Designer) wordt automatisch herkend: aan `10x-Team-Plus:`-skills, aan de mappen `.10x/decisions/ux-designer/` of `ui-designer/`, of aan "Phase 7" in `status.md`. Zo'n kantoor krijgt een extra afdeling **Design** (UX met schetsboek, UI met kleurenpalet), een tijdlijn van 0 tot en met 7 en een poortwachter die let op code vóór fase 5 (implementatie). Projecten met de originele 10x-Team blijven de indeling met 0–6 houden. Het kopje toont `10x` of `10x+`.
+
+Het kantoor is niet afhankelijk van de plugin: het leest alleen (read-only) de `.10x/`-map van je project en de skill-namen uit de hooks. Projecten zonder `.10x/` krijgen gewoon het normale kantoor. `npm run demo` speelt ook een complete 10x-Team-Plus-run af (`VAO_DEMO_10X=classic npm run demo` voor de originele).
 
 ## Vereisten
 

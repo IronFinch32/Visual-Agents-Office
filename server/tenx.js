@@ -5,6 +5,9 @@ import { join } from 'node:path';
 export const ROLES = [
   { id: 'cto', label: 'CTO', skill: 'cto', dept: 'strategy' },
   { id: 'product-manager', label: 'PM', skill: 'product-manager', dept: 'strategy' },
+  // 10x-Team-Plus only (ADR-007)
+  { id: 'ux-designer', label: 'UX', skill: 'ux-designer', dept: 'design' },
+  { id: 'ui-designer', label: 'UI', skill: 'ui-designer', dept: 'design' },
   { id: 'architect', label: 'Architect', skill: 'principal-architect', dept: 'architecture' },
   { id: 'staff-engineer', label: 'Staff', skill: 'staff-engineer', dept: 'architecture' },
   { id: 'engineering-manager', label: 'EM', skill: 'engineering-manager', dept: 'planning' },
@@ -19,9 +22,22 @@ export const ROLES = [
 export const ROLE_IDS = new Set(ROLES.map((r) => r.id));
 export const MEETING = 'meeting';
 
-// Department per phase: phase 0 is the brainstorm meeting.
-export const PHASE_DEPT = ['meeting', 'strategy', 'architecture', 'planning', 'engineering', 'quality', 'operations'];
-const PHASE_DEFAULT_ROLE = [MEETING, 'product-manager', 'architect', 'engineering-manager', 'sde', 'qa', 'devops'];
+// Department per phase; phase 0 is the brainstorm meeting. 10x-Team-Plus adds Experience Design.
+export const FLAVORS = {
+  classic: { depts: ['meeting', 'strategy', 'architecture', 'planning', 'engineering', 'quality', 'operations'], implPhase: 4 },
+  plus: { depts: ['meeting', 'strategy', 'design', 'architecture', 'planning', 'engineering', 'quality', 'operations'], implPhase: 5 },
+};
+export const lastPhase = (flavor) => FLAVORS[flavor].depts.length - 1;
+// Kept for compatibility with ADR-006 callers.
+export const PHASE_DEPT = FLAVORS.classic.depts;
+
+/** Signals that a project uses 10x-Team-Plus. */
+export function isPlusSignal({ skill, path, statusText } = {}) {
+  if (skill && /^10x-team-plus:/i.test(skill)) return true;
+  if (path && /\/\.10x\/decisions\/(ux|ui)-designer\//.test(norm(path))) return true;
+  if (statusText && /phase\s*7|experience design/i.test(statusText)) return true;
+  return false;
+}
 
 const GATE_MS = 2 * 60 * 1000;
 const MAX_DECISION_BYTES = 4096;
@@ -72,25 +88,31 @@ function toolPath(input) {
   return m ? m[1].trim() : '';
 }
 
-/** Best guess when no exact signal: what does this kind of work look like in this phase? */
-export function guessRole(phase, toolName, toolInput = {}) {
-  const ph = Number.isInteger(phase) ? phase : 4;
+/** Best guess when no exact signal: what does this kind of work look like in this phase's department? */
+export function guessRole(phase, toolName, toolInput = {}, flavor = 'classic') {
+  const depts = FLAVORS[flavor].depts;
+  const dept = Number.isInteger(phase) ? depts[Math.min(phase, depts.length - 1)] : 'engineering';
   const path = norm(toolPath(toolInput));
   const cmd = String(toolInput?.command || '');
   const isTest = /\b(test|spec|jest|vitest|pytest|playwright)\b/i.test(cmd) || /(\.|_)(test|spec)\./i.test(path);
   if (/\.(sql)$|migrat|schema/i.test(path) || /\b(psql|mysql|prisma migrate|alembic)\b/.test(cmd)) return 'dba';
-  if (ph === 0) return MEETING;
-  if (ph <= 3) return PHASE_DEFAULT_ROLE[ph];
-  if (ph === 4) return isTest && toolName === 'Bash' ? 'qa' : 'sde';
-  if (ph === 5) return /secur|audit|auth/i.test(path + cmd) ? 'security' : 'qa';
-  return /monitor|alert|slo|grafana|prometheus/i.test(path + cmd) ? 'sre' : 'devops';
+  switch (dept) {
+    case 'meeting': return MEETING;
+    case 'strategy': return 'product-manager';
+    case 'design': return /\.(css|scss|svg)$|token|theme|style|figma/i.test(path) ? 'ui-designer' : 'ux-designer';
+    case 'architecture': return 'architect';
+    case 'planning': return 'engineering-manager';
+    case 'engineering': return isTest && toolName === 'Bash' ? 'qa' : 'sde';
+    case 'quality': return /secur|audit|auth/i.test(path + cmd) ? 'security' : 'qa';
+    default: return /monitor|alert|slo|grafana|prometheus/i.test(path + cmd) ? 'sre' : 'devops';
+  }
 }
 
 /**
  * Phase from a free-form status.md: use the last section that mentions phases, take the
  * highest "Phase N" marked done ([x] or "complete") and return the next one (max 6).
  */
-export function parsePhase(text) {
+export function parsePhase(text, maxPhase = 6) {
   if (!text) return null;
   const sections = String(text).split(/^(?=#\s)/m).reverse();
   for (const section of sections) {
@@ -102,7 +124,7 @@ export function parsePhase(text) {
       if (/\[x\]|complete/i.test(line) && !/\[ \]/.test(line)) done.push(n);
     }
     const highest = done.length ? Math.max(...done) : -1;
-    return { phase: Math.min(6, highest + 1), done: [...new Set(done)].sort(), complete: highest >= 6 };
+    return { phase: Math.min(maxPhase, highest + 1), done: [...new Set(done)].sort(), complete: highest >= maxPhase };
   }
   return null;
 }
@@ -120,7 +142,7 @@ export function createTenx({ fs, now = () => Date.now() }) {
   function project(key) {
     let p = projects.get(key);
     if (!p) {
-      p = { key, enabled: false, phase: null, done: [], complete: false, adrs: [], reviews: {}, gate: null, handoffAt: 0, roles: new Map(), lastRefresh: 0 };
+      p = { key, enabled: false, flavor: 'classic', phase: null, done: [], complete: false, adrs: [], reviews: {}, gate: null, handoffAt: 0, roles: new Map(), lastRefresh: 0 };
       projects.set(key, p);
     }
     return p;
@@ -133,7 +155,9 @@ export function createTenx({ fs, now = () => Date.now() }) {
     p.lastRefresh = now();
     if (!p.enabled && fs.exists(dir)) p.enabled = true;
     if (!p.enabled) return;
-    const status = parsePhase(fs.readText(join(dir, 'status.md')));
+    const statusText = fs.readText(join(dir, 'status.md'));
+    if (isPlusSignal({ statusText }) || fs.exists(join(dir, 'decisions', 'ux-designer')) || fs.exists(join(dir, 'decisions', 'ui-designer'))) p.flavor = 'plus';
+    const status = parsePhase(statusText, lastPhase(p.flavor));
     if (status) Object.assign(p, status);
     p.adrs = fs.list(join(dir, 'adrs'))
       .filter((f) => f.name.endsWith('.md'))
@@ -161,10 +185,12 @@ export function createTenx({ fs, now = () => Date.now() }) {
       const input = evt.tool_input || {};
       if (evt.tool_name === 'Skill') {
         exact = roleFromSkill(input.skill || input.name);
-        if (/^10x-team:/i.test(input.skill || '')) p.enabled = true;
+        if (/^10x-team(-plus)?:/i.test(input.skill || '')) p.enabled = true;
+        if (isPlusSignal({ skill: input.skill })) p.flavor = 'plus';
       }
       const path = toolPath(input);
       if (!exact && path) exact = roleFromPath(path);
+      if (isPlusSignal({ path })) p.flavor = 'plus';
       if (path && isTenxPath(path)) {
         p.enabled = true;
         if (/\/\.10x\/handoff\.md$/.test(norm(path))) p.handoffAt = t;
@@ -174,13 +200,13 @@ export function createTenx({ fs, now = () => Date.now() }) {
       if (!p.enabled) return false;
       if (path && isCodeFile(path) && ['Write', 'Edit', 'MultiEdit', 'apply_patch', 'NotebookEdit'].includes(evt.tool_name)) {
         if (!p.adrs.length) p.gate = { at: t, reason: 'Code geschreven terwijl er nog geen ADR is' };
-        else if (p.phase !== null && p.phase < 4 && !p.complete) p.gate = { at: t, reason: `Code geschreven in fase ${p.phase}, vóór de implementatiefase` };
+        else if (p.phase !== null && p.phase < FLAVORS[p.flavor].implPhase && !p.complete) p.gate = { at: t, reason: `Code geschreven in fase ${p.phase}, vóór de implementatiefase` };
       }
       // Subagents work on the shared floor; only the session itself plays a team role.
       // Bookkeeping in .10x (status.md, handoff.md) doesn't say who is working: keep the current role.
       const bookkeeping = path && isTenxPath(path) && !exact;
       if (!evt.agent_id && !bookkeeping) {
-        const role = exact || guessRole(p.phase, evt.tool_name, input);
+        const role = exact || guessRole(p.phase, evt.tool_name, input, p.flavor);
         p.roles.set(agent.sessionId, { role, guessed: !exact, at: t });
       }
       return true;
@@ -210,6 +236,7 @@ export function createTenx({ fs, now = () => Date.now() }) {
     for (const p of projects.values()) {
       if (!p.enabled || (activeKeys && !activeKeys.has(p.key))) continue;
       out[p.key] = {
+        flavor: p.flavor,
         phase: p.phase,
         done: p.done,
         complete: p.complete,

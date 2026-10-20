@@ -1,7 +1,7 @@
 // The building: one room per project, laid out to fit the screen, with click-to-focus.
 import { createRoom } from './room.js';
 import { createTenxRoom } from './tenx-room.js';
-import { DEPTS, PHASE_DEPT } from './tenx-sprites.js';
+import { DEPTS, phasesFor } from './tenx-sprites.js';
 import { timePhase } from './sprites.js';
 
 const timeOverride = new URLSearchParams(location.search).get('tijd') || '';
@@ -84,7 +84,7 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
       r.counts.replaceChildren();
       const tx = tenx[key];
       if (tx) {
-        const label = tx.complete ? '10x · klaar' : `10x · fase ${tx.phase ?? '?'}${tx.phase != null ? ` ${DEPTS[PHASE_DEPT[tx.phase]].label}` : ''}`;
+        const label = tx.complete ? `${tx.flavor === 'plus' ? '10x+' : '10x'} · klaar` : `${tx.flavor === 'plus' ? '10x+' : '10x'} · fase ${tx.phase ?? '?'}${tx.phase != null ? ` ${DEPTS[phasesFor(tx.flavor).depts[tx.phase]]?.label ?? ''}` : ''}`;
         r.counts.append(el('span', 'chip tenx', label));
       }
       for (const k of ['waiting', 'working', 'done']) {

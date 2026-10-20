@@ -4,6 +4,8 @@ import { C, FONT, rect, fit, wrap } from './sprites.js';
 export const ROLE_INFO = {
   cto: { label: 'CTO', dept: 'strategy', outfit: 'manager', shirt: '#2c2f45', accent: '#e8c35a' },
   'product-manager': { label: 'PM', dept: 'strategy', outfit: 'planner', shirt: '#d9668f', acc: 'clipboard' },
+  'ux-designer': { label: 'UX', dept: 'design', outfit: 'planner', shirt: '#4fb3a9', acc: 'sketch' },
+  'ui-designer': { label: 'UI', dept: 'design', outfit: 'cap', shirt: '#e87fb0', accent: '#b8324f', acc: 'palette' },
   architect: { label: 'Architect', dept: 'architecture', outfit: 'cap', shirt: '#4a7fd6', accent: '#f1c40f', acc: 'blueprint' },
   'staff-engineer': { label: 'Staff', dept: 'architecture', outfit: 'hoodie', shirt: '#5b6fb8' },
   'engineering-manager': { label: 'EM', dept: 'planning', outfit: 'manager', shirt: '#3b4a5e', accent: '#4ea3ff', acc: 'headset' },
@@ -19,6 +21,7 @@ export const ROLE_INFO = {
 export const DEPTS = {
   meeting: { label: 'Vergaderzaal', rug: '#6b5a8f', roles: [] },
   strategy: { label: 'Strategie', rug: '#7a5a6e', roles: ['cto', 'product-manager'] },
+  design: { label: 'Design', rug: '#7a5f8f', roles: ['ux-designer', 'ui-designer'] },
   architecture: { label: 'Architectuur', rug: '#4d5f8a', roles: ['architect', 'staff-engineer'] },
   planning: { label: 'Planning', rug: '#5d5a8a', roles: ['engineering-manager', 'senior-engineer'] },
   engineering: { label: 'Engineering', rug: '#3f6f5c', roles: ['sde', 'dba'] },
@@ -27,8 +30,20 @@ export const DEPTS = {
   lounge: { label: 'Lounge', rug: '#3f6f73', roles: [] },
 };
 
-export const PHASE_DEPT = ['meeting', 'strategy', 'architecture', 'planning', 'engineering', 'quality', 'operations'];
-export const PHASE_DEFAULT_ROLE = ['product-manager', 'product-manager', 'architect', 'engineering-manager', 'sde', 'qa', 'devops'];
+// Per plugin flavor (ADR-007): department and default role per phase.
+export const FLAVOR_PHASES = {
+  classic: {
+    depts: ['meeting', 'strategy', 'architecture', 'planning', 'engineering', 'quality', 'operations'],
+    defaults: ['product-manager', 'product-manager', 'architect', 'engineering-manager', 'sde', 'qa', 'devops'],
+    implPhase: 4,
+  },
+  plus: {
+    depts: ['meeting', 'strategy', 'design', 'architecture', 'planning', 'engineering', 'quality', 'operations'],
+    defaults: ['product-manager', 'product-manager', 'ux-designer', 'architect', 'engineering-manager', 'sde', 'qa', 'devops'],
+    implPhase: 5,
+  },
+};
+export const phasesFor = (flavor) => FLAVOR_PHASES[flavor] || FLAVOR_PHASES.classic;
 
 const shade = (hex, f) => {
   const n = parseInt(hex.slice(1), 16);
@@ -73,6 +88,12 @@ export function drawAccessory(ctx, x, y, role, { seated, pose, t = 0 }) {
     case 'pager':
       p(1, 13, 3, 2, '#1b1b22'); if (Math.sin(t * 5) > 0) p(2, 13, 1, 1, '#ff4d5e');
       break;
+    case 'sketch':
+      if (pose !== 'working') { p(-3, 9, 4, 5, '#f7f7fb'); p(-2, 10, 2, 1, '#9aa0b8'); p(-2, 12, 2, 1, '#9aa0b8'); p(1, 8, 1, 4, '#e8c35a'); }
+      break;
+    case 'palette':
+      p(-3, 10, 4, 3, '#d9a066'); p(-3, 10, 1, 1, '#ff4d5e'); p(-1, 10, 1, 1, '#4ea3ff'); p(-2, 12, 1, 1, '#3ddc84');
+      break;
     case 'clipboard':
       if (pose !== 'working') { p(-2, 9, 3, 5, '#a0522d'); p(-1, 10, 1, 3, '#ffffff'); }
       break;
@@ -114,12 +135,12 @@ export function drawMeetingTable(ctx, x, y, w) {
   for (let i = x + 6; i < x + w - 4; i += 12) rect(ctx, i, y + 3, 5, 3, '#f0f0f0');
 }
 
-export function drawTimeline(ctx, x, y, { phase, done = [], complete, t = 0 }) {
+export function drawTimeline(ctx, x, y, { phase, done = [], complete, last = 6, t = 0 }) {
   ctx.font = `600 5px ${FONT}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  rect(ctx, x, y - 1, 6 * 12, 2, '#3a3d5e');
-  for (let i = 0; i <= 6; i++) {
+  rect(ctx, x, y - 1, last * 12, 2, '#3a3d5e');
+  for (let i = 0; i <= last; i++) {
     const cx = x + i * 12;
     const isDone = done.includes(i) || complete;
     const isCurrent = !complete && i === phase;

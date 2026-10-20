@@ -6,7 +6,7 @@ import {
   drawPerson, drawBadge, drawBubble, drawNameplate, drawLighting, minutesSince, FONT,
 } from './sprites.js';
 import {
-  ROLE_INFO, DEPTS, PHASE_DEPT, PHASE_DEFAULT_ROLE, roleLooks, drawAccessory, drawFolder, drawZone,
+  ROLE_INFO, DEPTS, phasesFor, roleLooks, drawAccessory, drawFolder, drawZone,
   drawMeetingTable, drawTimeline, drawAdrFrame, drawBeacon, drawStamp,
 } from './tenx-sprites.js';
 
@@ -14,15 +14,24 @@ const MARGIN = 8;
 const WALL_H = 40;
 const ZONE_W = 80;
 const ZONE_H = 76;
-const ZONE_ORDER = ['meeting', 'strategy', 'architecture', 'planning', 'engineering', 'quality', 'operations', 'lounge'];
-const MEETING_ROLES = ['product-manager', 'cto', 'architect', 'staff-engineer', 'engineering-manager', 'qa'];
+// Zone grid per flavor: [col, row, span]. 10x-Team-Plus adds a Design department (ADR-007).
+const LAYOUTS = {
+  classic: {
+    cols: 4,
+    zones: { meeting: [0, 0], strategy: [1, 0], architecture: [2, 0], planning: [3, 0], engineering: [0, 1], quality: [1, 1], operations: [2, 1], lounge: [3, 1] },
+  },
+  plus: {
+    cols: 5,
+    zones: { meeting: [0, 0], strategy: [1, 0], design: [2, 0], architecture: [3, 0], planning: [4, 0], engineering: [0, 1], quality: [1, 1], operations: [2, 1], lounge: [3, 1, 2] },
+  },
+};
+const MEETING_ROLES = ['product-manager', 'cto', 'ux-designer', 'architect', 'engineering-manager', 'qa'];
 const CELL_W = 64;
 const ROW_H = 66;
 const WORK_COLS = 5;
 const BOTTOM = 8;
 const WALK_SPEED = 70;
 const MAX_PARTICLES = 40;
-const ROLES = Object.keys(ROLE_INFO);
 
 const STATUS_TEXT = {
   working: () => 'werkt',
@@ -56,7 +65,12 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
   let view = { scale: 1, ox: 0, oy: 0 };
   let L = {};
 
-  const W = MARGIN * 2 + 4 * ZONE_W;
+  let flavor = 'classic';
+  let LAY = LAYOUTS.classic;
+  let ZONE_ORDER = Object.keys(LAY.zones);
+  let ROLES = Object.keys(ROLE_INFO).filter((r) => ROLE_INFO[r].dept !== 'design');
+  let PH = phasesFor('classic');
+  let W = MARGIN * 2 + LAY.cols * ZONE_W;
   const floorY = WALL_H + 2 + 2 * ZONE_H + 4;
 
   function computeLayout() {
@@ -68,8 +82,8 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
   computeLayout();
 
   const zone = (name) => {
-    const i = ZONE_ORDER.indexOf(name);
-    return { x: MARGIN + (i % 4) * ZONE_W, y: WALL_H + 2 + Math.floor(i / 4) * ZONE_H };
+    const [col, row, span = 1] = LAY.zones[name];
+    return { x: MARGIN + col * ZONE_W, y: WALL_H + 2 + row * ZONE_H, w: span * ZONE_W };
   };
   const door = () => ({ x: W - 20, y: WALL_H + 2 });
   function desk(role) {
@@ -94,14 +108,27 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     return [{ x: z.x + 16, y: z.y + 50 }, { x: z.x + 34, y: z.y + 54 }, { x: z.x + 16, y: z.y + 70 }, { x: z.x + 34, y: z.y + 72 }][i];
   }
 
-  // The whole team is always in the office.
-  for (const role of ROLES) {
-    const s = desk(role).seat;
-    chars.set(`m:${role}`, {
-      id: `m:${role}`, member: role, x: s.x, y: s.y, tx: s.x, ty: s.y, phase: Math.random() * 10,
-      looks: roleLooks(role, looksFor(role)), outfit: ROLE_INFO[role].outfit, accent: ROLE_INFO[role].accent, lastSpark: 0,
-    });
+  // The whole team is always in the office; Plus brings the two designers.
+  function applyFlavor(next) {
+    flavor = next === 'plus' ? 'plus' : 'classic';
+    LAY = LAYOUTS[flavor];
+    ZONE_ORDER = Object.keys(LAY.zones);
+    ROLES = Object.keys(ROLE_INFO).filter((r) => flavor === 'plus' || ROLE_INFO[r].dept !== 'design');
+    PH = phasesFor(flavor);
+    W = MARGIN * 2 + LAY.cols * ZONE_W;
+    for (const [id, ch] of [...chars]) if (ch.member && !ROLES.includes(ch.member)) chars.delete(id);
+    for (const role of ROLES) {
+      const s = desk(role).seat;
+      const ch = chars.get(`m:${role}`);
+      if (ch) { ch.x = s.x; ch.y = s.y; continue; } // the grid moved: everyone takes their seat again
+      chars.set(`m:${role}`, {
+        id: `m:${role}`, member: role, x: s.x, y: s.y, tx: s.x, ty: s.y, phase: Math.random() * 10,
+        looks: roleLooks(role, looksFor(role)), outfit: ROLE_INFO[role].outfit, accent: ROLE_INFO[role].accent, lastSpark: 0,
+      });
+    }
+    computeLayout();
   }
+  applyFlavor('classic');
 
   const currentPhase = () => (Number.isInteger(tenx.phase) ? tenx.phase : null);
 
@@ -111,9 +138,9 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     const sessions = agents.filter((a) => a.kind === 'session').sort((a, b) => a.updatedAt - b.updatedAt);
     for (const a of sessions) {
       const info = tenx.roles?.[a.id];
-      let role = info?.role ?? PHASE_DEFAULT_ROLE[currentPhase() ?? 4];
+      let role = info?.role ?? PH.defaults[currentPhase() ?? PH.implPhase];
       if (role === 'meeting') { meetingMode = true; role = 'product-manager'; }
-      if (!ROLE_INFO[role]) role = 'sde';
+      if (!ROLE_INFO[role] || !ROLES.includes(role)) role = 'sde';
       driven.set(role, { agent: a, guessed: info ? info.guessed : true });
     }
   }
@@ -138,6 +165,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
 
   function setTenx(info) {
     tenx = info || {};
+    if ((tenx.flavor || 'classic') !== flavor) applyFlavor(tenx.flavor);
     const t = Date.now();
     const numbers = (tenx.adrs || []).map((a) => a.number || a.title);
     if (seenAdrs) for (const n of numbers) if (!seenAdrs.has(n)) adrGlow.set(n, t + 10_000);
@@ -150,9 +178,9 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
   function startCourier() {
     computeDriven();
     const phase = currentPhase() ?? 0;
-    const from = [...driven.keys()][0] || PHASE_DEFAULT_ROLE[phase];
-    let toDept = PHASE_DEPT[phase];
-    if (ROLE_INFO[from].dept === toDept || toDept === 'meeting') toDept = PHASE_DEPT[Math.min(6, phase + 1)];
+    const from = [...driven.keys()][0] || PH.defaults[phase];
+    let toDept = PH.depts[phase];
+    if (ROLE_INFO[from].dept === toDept || toDept === 'meeting') toDept = PH.depts[Math.min(PH.depts.length - 1, phase + 1)];
     const d = desk(DEPTS[toDept].roles[0]);
     courier = { role: from, stage: 'go', target: { x: d.x + 15, y: d.y + 22 } };
   }
@@ -255,7 +283,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     step(dt, t);
     const lightPhase = getPhase ? getPhase() : 'dag';
     const phase = currentPhase();
-    const activeDept = meetingMode ? 'meeting' : phase !== null ? PHASE_DEPT[phase] : null;
+    const activeDept = meetingMode ? 'meeting' : phase !== null ? PH.depts[phase] : null;
 
     const scale = Math.min(cw / L.W, chh / L.H);
     view = { scale, ox: Math.round((cw - L.W * scale) / 2), oy: Math.round((chh - L.H * scale) / 2) };
@@ -269,7 +297,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     drawFloor(ctx, 0, WALL_H, L.W, L.H - WALL_H);
     for (const name of ZONE_ORDER) {
       const z = zone(name);
-      drawZone(ctx, z.x, z.y, ZONE_W, ZONE_H, name, { active: name === activeDept && !tenx.complete, t });
+      drawZone(ctx, z.x, z.y, z.w, ZONE_H, name, { active: name === activeDept && !tenx.complete, t });
     }
     ctx.font = `600 5px ${FONT}`;
     ctx.textBaseline = 'top';
@@ -283,7 +311,8 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     let board = lead?.task || '';
     if (meetingMode && lead?.status === 'waiting') board = `Vraag: ${lead.waitingReason || 'wacht op jouw antwoord'}`;
     const boardX = MARGIN + 4;
-    const tlX = L.W - 122;
+    const last = PH.depts.length - 1;
+    const tlX = L.W - 34 - last * 12;
     const adrs = (tenx.adrs || []).slice(-Math.floor((tlX - 12 - (boardX + 66)) / 16));
     adrs.forEach((a, i) => drawAdrFrame(ctx, boardX + 66 + i * 16, 10, a.number, (adrGlow.get(a.number || a.title) || 0) > Date.now() && Math.sin(t * 6) > -0.3));
     if (!adrs.length) {
@@ -295,7 +324,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     ctx.fillStyle = '#e4defa';
     ctx.textBaseline = 'top';
     ctx.fillText(tenx.complete ? 'FASE · KLAAR' : `FASE ${phase ?? '?'}`, tlX - 4, 5);
-    drawTimeline(ctx, tlX, 20, { phase, done: tenx.done || [], complete: tenx.complete, t });
+    drawTimeline(ctx, tlX, 20, { phase, done: tenx.done || [], complete: tenx.complete, last, t });
     drawDoor(ctx, door().x, WALL_H);
     if (tenx.gate) drawBeacon(ctx, door().x - 16, 8, t);
     drawOuterWalls(ctx, L.W, L.H, WALL_H);
@@ -307,10 +336,10 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     const spots = [];
 
     const lz = zone('lounge');
-    scene.push({ y: lz.y + 30, draw: () => drawCoffeeMachine(ctx, lz.x + ZONE_W - 22, lz.y + 12, t) });
+    scene.push({ y: lz.y + 30, draw: () => drawCoffeeMachine(ctx, lz.x + lz.w - 22, lz.y + 12, t) });
     scene.push({ y: lz.y + 64, draw: () => drawSmallTable(ctx, lz.x + 19, lz.y + 58) });
     scene.push({ y: lz.y + 32, draw: () => drawPlant(ctx, lz.x + 6, lz.y + 12, t) });
-    if (Math.random() < dt * 2) spawn(lz.x + ZONE_W - 16, lz.y + 18, 'rgba(255,255,255,.55)', 0, -8, 1);
+    if (Math.random() < dt * 2) spawn(lz.x + lz.w - 16, lz.y + 18, 'rgba(255,255,255,.55)', 0, -8, 1);
     const mz = zone('meeting');
     scene.push({ y: mz.y + 56, draw: () => drawMeetingTable(ctx, mz.x + 10, mz.y + 46, 60) });
     for (let i = 0; i < 3; i++) { const s = meetingSeat(i); scene.push({ y: s.y - 3, draw: () => drawChair(ctx, s.x, s.y) }); }
@@ -405,7 +434,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
         if (name === activeDept || name === 'lounge') continue;
         const z = zone(name);
         ctx.fillStyle = 'rgba(10,10,30,.14)';
-        ctx.fillRect(z.x + 2, z.y + 2, ZONE_W - 4, ZONE_H - 4);
+        ctx.fillRect(z.x + 2, z.y + 2, z.w - 4, ZONE_H - 4);
       }
     }
 
@@ -428,9 +457,9 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
       const msg = 'GATE OVERGESLAGEN';
       const w = Math.ceil(ctx.measureText(msg).width) + 6;
       if (Math.sin(t * 6) > -0.4) {
-        rect(ctx, door().x - 18 - w, 18, w, 8, C.waiting);
+        rect(ctx, door().x - 18 - w, 29, w, 8, C.waiting); // below the phase timeline
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(msg, door().x - 15 - w, 19);
+        ctx.fillText(msg, door().x - 15 - w, 30);
       }
     }
     for (const draw of overlays) draw();
