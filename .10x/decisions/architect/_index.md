@@ -11,3 +11,4 @@
 - [autostart](autostart.md) — ADR-004
 - [codex-support](codex-support.md) — ADR-005
 - [tenx-mode](tenx-mode.md)
+- [tenx-plus](tenx-plus.md) — ADR-007

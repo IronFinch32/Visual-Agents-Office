@@ -43,3 +43,6 @@
 # Status — tenx-mode
 - [x] Spec, ADR-006, plan
 - [x] Implementation + verification (50/50, demo), delivery
+
+# Status — tenx-plus
+- [x] Design (ADR-007)
