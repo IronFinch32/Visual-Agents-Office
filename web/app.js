@@ -2,11 +2,30 @@ import { createBuilding } from './building.js';
 import { minutesSince } from './sprites.js';
 
 const $ = (id) => document.getElementById(id);
-const building = createBuilding($('building'), { banner: $('banner'), backButton: $('back') });
+const building = createBuilding($('building'), { banner: $('banner'), backButton: $('back'), onRoleClick: showDecision });
 const STATUS_LABEL = { working: 'werkt', waiting: 'wacht op jou', done: 'klaar', idle: 'idle' };
 const ORDER = { waiting: 0, working: 1, done: 2, idle: 3 };
 
 let agents = [];
+let tenx = {};
+let decision = null; // { project, role, file, text } shown at the top of the panel
+const ROLE_LABEL = {
+  cto: 'CTO', 'product-manager': 'Product Manager', architect: 'Architect', 'staff-engineer': 'Staff Engineer',
+  'engineering-manager': 'Engineering Manager', 'senior-engineer': 'Senior Engineer', sde: 'SDE', dba: 'DBA',
+  qa: 'QA Engineer', security: 'Security Engineer', devops: 'DevOps Engineer', sre: 'SRE',
+};
+
+async function showDecision(project, role) {
+  try {
+    const res = await fetch(`/api/decision?project=${encodeURIComponent(project)}&role=${encodeURIComponent(role)}`);
+    const d = res.ok ? await res.json() : { text: '' };
+    decision = { project, role, file: d.file, text: d.text };
+  } catch {
+    decision = { project, role, file: null, text: '' };
+  }
+  $('panel').classList.remove('hidden');
+  renderPanel();
+}
 let skew = 0;
 let soundOn = false;
 let audio = null;
@@ -69,6 +88,25 @@ function renderPanel() {
   const now = Date.now() - skew;
   const list = $('list');
   list.replaceChildren();
+  if (decision) {
+    const li = el('li', 'card decision');
+    const row = el('div', 'row');
+    row.append(el('span', 'name', `Beslissing · ${ROLE_LABEL[decision.role] || decision.role}`));
+    const close = el('button', 'close', '✕');
+    close.type = 'button';
+    close.title = 'Sluiten';
+    close.addEventListener('click', () => { decision = null; renderPanel(); });
+    row.append(close);
+    li.append(row, el('div', 'task', decision.file ? `.10x/decisions/${decision.role}/${decision.file}` : 'Nog geen beslissing van deze rol.'));
+    if (decision.text) li.append(el('pre', 'decision-text', decision.text));
+    list.append(li);
+  }
+  for (const [key, tx] of Object.entries(tenx)) {
+    if (!tx.gate) continue;
+    const li = el('li', 'card waiting gate-card');
+    li.append(el('div', 'name', `⚠ Gate overgeslagen · ${key.split('/').pop()}`), el('div', 'reason', tx.gate.reason));
+    list.append(li);
+  }
   const projects = new Map();
   for (const a of agents) {
     const key = a.projectKey || 'unknown';
@@ -114,7 +152,8 @@ function onSnapshot(data) {
   for (const id of waitingNow) if (!wasWaiting.has(id)) newlyWaiting = true;
   wasWaiting.clear();
   for (const id of waitingNow) wasWaiting.add(id);
-  building.setAgents(agents, data.now);
+  tenx = data.tenx || {};
+  building.setAgents(agents, data.now, tenx);
   renderPanel();
   if (newlyWaiting) chime();
 }

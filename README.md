@@ -10,6 +10,22 @@ Een live pixel-art kantoor dat laat zien welke **Claude Code**- en **Codex**-age
 - Het licht volgt je klok: overdag zon door de ramen, 's avonds en 's nachts bureaulampjes.
 - **Claude en Codex door elkaar.** Een klein label op elk naambordje (`claude` of `codex`) laat zien welke tool een agent aanstuurt; werken ze aan hetzelfde project, dan zitten ze in hetzelfde kantoor.
 
+## 10x-team modus
+
+Gebruik je de [10x-team plugin](https://github.com/Jaan-Mustafa/10x-Team), dan krijgt elk project met een `.10x/`-map automatisch een **10x-kantoor**:
+
+- **Zes afdelingen, één per fase**: Strategie (CTO, PM), Architectuur (Architect, Staff), Planning (EM, Senior), Engineering (SDE, DBA), Kwaliteit (QA, Security) en Operations (DevOps, SRE). Daarnaast een **vergaderzaal** voor fase 0 en een lounge.
+- **Het hele team is er altijd.** Elke rol heeft een eigen uiterlijk: CTO in pak, QA met vergrootglas, Security met schild, DevOps met koptelefoon, …
+- **Wie nu aan het werk is**, zie je aan de ballon, het scherm en de bureaulamp; de afdeling van de huidige fase is verlicht. Een rol wordt exact herkend als Claude een 10x-skill aanroept of naar `.10x/decisions/<rol>/` schrijft. Anders schat het kantoor de rol op basis van de fase en het soort werk; dat zie je aan een `~` op het naambordje.
+- **Aan de muur**: het whiteboard met de opdracht (in fase 0 je openstaande vraag), de ADR's als ingelijste bordjes (een nieuwe licht op) en een fase-tijdlijn 0–6 uit `.10x/status.md`.
+- **Overdracht**: verandert `handoff.md`, dan loopt een teamlid met een map naar de volgende afdeling.
+- **Poortwachter**: wordt er code geschreven terwijl er nog geen ADR is, of vóór fase 4, dan gaat er een rode zwaailamp aan en verschijnt er een waarschuwing in de zijbalk.
+- **Stempels**: na een QA- of security-review in `.10x/reviews/` komt er een groene stempel (✓) of een rode (✗ bij afgekeurd, blocker of fail).
+- **Klik op een teamlid** om het begin van zijn nieuwste beslissing in de zijbalk te lezen.
+- Echte subagents (Explore e.d.) werken op de **werkvloer** onder de afdelingen.
+
+Het kantoor is niet afhankelijk van de plugin: het leest alleen (read-only) de `.10x/`-map van je project en de skill-namen uit de hooks. Projecten zonder `.10x/` krijgen gewoon het normale kantoor. `npm run demo` speelt ook een complete 10x-run af.
+
 ## Vereisten
 
 - [Node.js](https://nodejs.org) 20 of nieuwer
@@ -120,9 +136,9 @@ Windows is niet getest. De hooks gebruiken `sh`-syntax en `curl`.
 ```
 bin/        startcommando (start, setup, uninstall, demo, autostart)
 service/    autostart via launchd / systemd / Taakplanner
-server/     HTTP + SSE server en de status-state-machine
+server/     HTTP + SSE server, de status-state-machine en de 10x-herkenning (tenx.js)
 hooks/      installer voor ~/.claude/settings.json en ~/.codex/hooks.json
-web/        de browser-app (canvas, geen build-stap)
+web/        de browser-app (canvas, geen build-stap); tenx-room.js is het 10x-kantoor
 scripts/    demo
 test/       node:test tests
 .10x/       ontwerpdocumenten, ADR's en reviews

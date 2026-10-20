@@ -111,6 +111,11 @@ button[aria-pressed="true"] { border-color: var(--done); }
 .chip.waiting { background: var(--waiting); color: #fff; }
 .chip.working { background: var(--working); }
 .chip.done { background: var(--done); }
+.chip.tenx { background: #f1c40f; color: #2a1b10; }
+.room.gate { border-color: var(--waiting); }
+.card.decision { border-left-color: #f1c40f; }
+.card .close { padding: 0 6px; font-size: 12px; }
+.decision-text { white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 11px; margin: 6px 0 0; max-height: 40vh; overflow: auto; color: var(--text); }
 .room canvas { display: block; image-rendering: pixelated; }
 .banner {
   position: absolute;

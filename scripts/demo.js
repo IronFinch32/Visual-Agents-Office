@@ -1,5 +1,7 @@
 // Simulates a few Claude Code sessions with subagent teams so you can try the office without real agents.
 // Usage: npm run demo   (server must be running)
+import { runTenxDemo } from './demo-10x.js';
+
 const port = Number(process.env.VAO_PORT) || 4747;
 const url = `http://127.0.0.1:${port}/event`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -30,6 +32,9 @@ async function spawn(s, id, type, description) {
   await tool(s, 'Agent', { subagent_type: type, description });
   await ev(s, 'SubagentStart', sub(id, type));
 }
+
+// The /10x-team run happens in parallel in its own department office.
+const tenxRun = runTenxDemo(send);
 
 for (const s of [web, webWt, api, docs, cx, cxApi]) { await ev(s, 'SessionStart', { source: 'startup' }); await sleep(300); }
 
@@ -90,3 +95,4 @@ await sleep(4000);
 console.log('Demo klaar. Het handbook-team vertrekt over 5 seconden.');
 await sleep(5000);
 await ev(docs, 'SessionEnd', { reason: 'prompt_input_exit' });
+await tenxRun;

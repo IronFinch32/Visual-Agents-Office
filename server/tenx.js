@@ -177,7 +177,9 @@ export function createTenx({ fs, now = () => Date.now() }) {
         else if (p.phase !== null && p.phase < 4 && !p.complete) p.gate = { at: t, reason: `Code geschreven in fase ${p.phase}, vóór de implementatiefase` };
       }
       // Subagents work on the shared floor; only the session itself plays a team role.
-      if (!evt.agent_id) {
+      // Bookkeeping in .10x (status.md, handoff.md) doesn't say who is working: keep the current role.
+      const bookkeeping = path && isTenxPath(path) && !exact;
+      if (!evt.agent_id && !bookkeeping) {
         const role = exact || guessRole(p.phase, evt.tool_name, input);
         p.roles.set(agent.sessionId, { role, guessed: !exact, at: t });
       }

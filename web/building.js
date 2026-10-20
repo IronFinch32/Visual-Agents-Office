@@ -1,5 +1,7 @@
 // The building: one room per project, laid out to fit the screen, with click-to-focus.
 import { createRoom } from './room.js';
+import { createTenxRoom } from './tenx-room.js';
+import { DEPTS, PHASE_DEPT } from './tenx-sprites.js';
 import { timePhase } from './sprites.js';
 
 const timeOverride = new URLSearchParams(location.search).get('tijd') || '';
@@ -19,7 +21,7 @@ function el(tag, cls, text) {
   return n;
 }
 
-export function createBuilding(container, { banner, backButton } = {}) {
+export function createBuilding(container, { banner, backButton, onRoleClick } = {}) {
   const rooms = new Map(); // projectKey -> { el, room, title, counts, name, waiting }
   const order = [];
   let present = new Set();
@@ -39,13 +41,25 @@ export function createBuilding(container, { banner, backButton } = {}) {
     section.append(header, canvas);
     section.addEventListener('click', () => focus(focusKey === key ? null : key));
     container.append(section);
-    const entry = { el: section, room: createRoom(canvas, { phase }), title, counts, name, waiting: false };
+    const entry = { el: section, canvas, room: createRoom(canvas, { phase }), title, counts, name, waiting: false };
     rooms.set(key, entry);
     order.push(key);
     return entry;
   }
 
-  function setAgents(list, serverNow) {
+  // A project in 10x mode gets the department office; switching type swaps the canvas.
+  function ensureType(key, r, wantTenx) {
+    if ((r.room.kind === 'tenx') === wantTenx) return;
+    const canvas = el('canvas');
+    canvas.setAttribute('aria-label', `Kantoor ${r.name}`);
+    r.canvas.replaceWith(canvas);
+    r.canvas = canvas;
+    r.room = wantTenx
+      ? createTenxRoom(canvas, { phase, onRoleClick: (role) => onRoleClick?.(key, role) })
+      : createRoom(canvas, { phase });
+  }
+
+  function setAgents(list, serverNow, tenx = {}) {
     const groups = new Map();
     for (const a of list) {
       const key = a.projectKey || 'unknown';
@@ -59,12 +73,20 @@ export function createBuilding(container, { banner, backButton } = {}) {
     }
     for (const [key, r] of rooms) {
       const group = groups.get(key) || [];
+      ensureType(key, r, !!tenx[key]);
       r.room.setAgents(group, serverNow);
+      r.room.setTenx?.(tenx[key]);
+      r.el.classList.toggle('gate', !!tenx[key]?.gate);
       const c = { waiting: 0, working: 0, done: 0, idle: 0 };
       for (const a of group) c[a.status] = (c[a.status] || 0) + 1;
       r.waiting = c.waiting > 0;
       r.el.classList.toggle('waiting', r.waiting);
       r.counts.replaceChildren();
+      const tx = tenx[key];
+      if (tx) {
+        const label = tx.complete ? '10x · klaar' : `10x · fase ${tx.phase ?? '?'}${tx.phase != null ? ` ${DEPTS[PHASE_DEPT[tx.phase]].label}` : ''}`;
+        r.counts.append(el('span', 'chip tenx', label));
+      }
       for (const k of ['waiting', 'working', 'done']) {
         if (!c[k]) continue;
         const chip = el('span', `chip ${k}`, `${STATUS_ICON[k]} ${c[k]}`);

@@ -342,7 +342,7 @@ export function drawMonitor(ctx, x, y, { category = 'idle', status, t = 0, seed 
 }
 
 /** Desk top + front. The front is drawn over a seated person's legs. */
-export function drawDesk(ctx, x, y, w, { accent, mug = false, lampOn = false, t = 0 } = {}) {
+export function drawDesk(ctx, x, y, w, { accent, mug = false, lampOn = false, compact = false, t = 0 } = {}) {
   ellipse(ctx, x + w / 2, y + 16, w / 2 + 2, 3, C.shadow);
   rect(ctx, x, y, w, 4, C.deskTop);
   rect(ctx, x, y, w, 1, '#e9b77f');
@@ -350,12 +350,16 @@ export function drawDesk(ctx, x, y, w, { accent, mug = false, lampOn = false, t 
   if (accent) rect(ctx, x, y + 4, w, 2, accent);
   rect(ctx, x + 2, y + 13, 3, 3, C.deskLeg);
   rect(ctx, x + w - 5, y + 13, 3, 3, C.deskLeg);
-  rect(ctx, x + 12, y + 1, 8, 2, '#f0f0f0'); // papers
-  rect(ctx, x + 22, y + 1, 9, 2, '#2a2e45'); // keyboard
-  // desk lamp
-  rect(ctx, x + 2, y - 1, 4, 1, '#3b3f4f');
-  rect(ctx, x + 3, y - 6, 1, 5, '#3b3f4f');
-  rect(ctx, x + 2, y - 8, 4, 2, lampOn ? '#ffd27a' : '#5b6078');
+  if (!compact) {
+    rect(ctx, x + 12, y + 1, 8, 2, '#f0f0f0'); // papers
+    rect(ctx, x + 22, y + 1, 9, 2, '#2a2e45'); // keyboard
+    // desk lamp
+    rect(ctx, x + 2, y - 1, 4, 1, '#3b3f4f');
+    rect(ctx, x + 3, y - 6, 1, 5, '#3b3f4f');
+    rect(ctx, x + 2, y - 8, 4, 2, lampOn ? '#ffd27a' : '#5b6078');
+  } else {
+    rect(ctx, x + 4, y + 1, 8, 2, '#2a2e45'); // keyboard
+  }
   if (mug) {
     rect(ctx, x + 7, y - 4, 4, 4, '#f4f4f4');
     rect(ctx, x + 11, y - 3, 1, 2, '#f4f4f4');

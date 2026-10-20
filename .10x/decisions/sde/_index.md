@@ -7,3 +7,4 @@
 - [distribution](distribution.md)
 - [autostart](autostart.md)
 - [codex-support](codex-support.md)
+- [tenx-mode](tenx-mode.md)

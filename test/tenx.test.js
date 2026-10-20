@@ -153,3 +153,15 @@ test('server exposes tenx in the snapshot and /api/decision', async () => {
     await new Promise((r) => server.close(r));
   }
 });
+
+test('bookkeeping writes (status.md, handoff.md) keep the current role', () => {
+  const { root, x } = project();
+  const tenx = createTenx({ fs: nodeFs });
+  tenx.onEvent(pre('Write', { file_path: join(x, 'decisions', 'qa', 'a.md') }), agent(root));
+  tenx.onEvent(pre('Write', { file_path: join(x, 'status.md') }), agent(root));
+  tenx.onEvent(pre('Write', { file_path: join(x, 'handoff.md') }), agent(root));
+  assert.deepEqual(
+    { role: tenx.snapshot()[root].roles.s.role, guessed: tenx.snapshot()[root].roles.s.guessed },
+    { role: 'qa', guessed: false },
+  );
+});
