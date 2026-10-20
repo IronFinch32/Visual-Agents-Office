@@ -8,4 +8,8 @@
 - [x] Phase 6: Delivery Complete (local tool; runbook in decisions/sre)
 
 ## Open
-- T7 done (hooks installed, live sessions + subagents verified). Waiting state still to observe from a real permission prompt.
+- Waiting state still to observe from a real permission prompt.
+
+# Status — project-offices
+- [x] Phase 0: Brainstorming — `.10x/specs/2026-10-20-project-offices-design.md`
+- [x] Phase 1: Strategy Complete
