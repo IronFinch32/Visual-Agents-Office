@@ -9,3 +9,4 @@
 - [project-offices](project-offices.md) — ADR-002
 - [office-polish](office-polish.md)
 - [autostart](autostart.md) — ADR-004
+- [codex-support](codex-support.md) — ADR-005

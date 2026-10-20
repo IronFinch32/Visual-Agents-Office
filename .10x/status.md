@@ -35,3 +35,6 @@
 # Status — autostart
 - [x] Design (ADR-004)
 - [x] Implementation, verification (35/35, live macOS), delivery
+
+# Status — codex-support
+- [x] Spec + ADR-005
