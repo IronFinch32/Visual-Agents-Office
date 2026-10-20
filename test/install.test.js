@@ -45,3 +45,15 @@ test('hook command is silent and harmless when the server is down', () => {
   const out = execFileSync('sh', ['-c', s.hooks.Stop[0].hooks[0].command], { input: '{"x":1}' }).toString();
   assert.equal(out, '');
 });
+
+test('hooksInstalled detects our hooks per port', async () => {
+  const { hooksInstalled, updateSettings } = await import('../hooks/install.js');
+  const dir = mkdtempSync(join(tmpdir(), 'vao-'));
+  const file = join(dir, 'settings.json');
+  assert.equal(hooksInstalled(file, 4747), false);
+  updateSettings('install', { file, port: 4747, log: () => {} });
+  assert.equal(hooksInstalled(file, 4747), true);
+  assert.equal(hooksInstalled(file, 5000), false);
+  updateSettings('uninstall', { file, port: 4747, log: () => {} });
+  assert.equal(hooksInstalled(file, 4747), false);
+});

@@ -1,17 +1,38 @@
 {
   "name": "visual-agents-office",
-  "version": "0.1.0",
-  "description": "A pixel-art office that shows your running Claude Code agents and what they are doing.",
+  "version": "1.0.0",
+  "description": "A live pixel-art office that shows your running Claude Code agents, their subagents and who is waiting for you.",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "agents",
+    "hooks",
+    "dashboard",
+    "pixel-art"
+  ],
+  "license": "MIT",
   "type": "module",
-  "private": true,
+  "bin": {
+    "visual-agents-office": "bin/visual-agents-office.js"
+  },
+  "files": [
+    "bin/",
+    "server/",
+    "hooks/",
+    "web/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "start": "node server/server.js",
-    "test": "node --test test/*.test.js",
-    "demo": "node scripts/demo.js",
-    "install-hooks": "node hooks/install.js install",
-    "uninstall-hooks": "node hooks/install.js uninstall"
+    "start": "node bin/visual-agents-office.js",
+    "setup": "node bin/visual-agents-office.js setup",
+    "uninstall-hooks": "node bin/visual-agents-office.js uninstall",
+    "install-hooks": "node bin/visual-agents-office.js setup",
+    "demo": "node bin/visual-agents-office.js demo",
+    "test": "node --test test/*.test.js"
   }
 }

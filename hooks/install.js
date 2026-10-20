@@ -48,38 +48,57 @@ export function addHooks(settings, port) {
   return settings;
 }
 
+export const DEFAULT_SETTINGS = join(homedir(), '.claude', 'settings.json');
+
+/** True when our hooks for this port are present in the settings file. */
+export function hooksInstalled(file = DEFAULT_SETTINGS, port = 4747) {
+  try {
+    const settings = JSON.parse(readFileSync(file, 'utf8'));
+    return EVENTS.every((e) => (settings.hooks?.[e] || []).some((g) => (g.hooks || []).some((h) => h.command === hookCommand(port))));
+  } catch {
+    return false;
+  }
+}
+
+/** Install or uninstall our hooks. Makes a backup first. Throws on unreadable settings. */
+export function updateSettings(action, { file = DEFAULT_SETTINGS, port = 4747, log = console.log } = {}) {
+  let settings = {};
+  if (existsSync(file)) {
+    try {
+      settings = JSON.parse(readFileSync(file, 'utf8'));
+    } catch (err) {
+      throw new Error(`Kan ${file} niet lezen als JSON: ${err.message}. Er is niets gewijzigd.`);
+    }
+    const backup = `${file}.vao-backup-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+    copyFileSync(file, backup);
+    log(`Backup: ${backup}`);
+  } else {
+    mkdirSync(dirname(file), { recursive: true });
+  }
+  settings = action === 'install' ? addHooks(settings, port) : removeHooks(settings);
+  writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
+  log(action === 'install'
+    ? `Hooks geïnstalleerd in ${file} (${EVENTS.length} events → poort ${port}). Nieuwe sessies worden direct opgepikt.`
+    : `Hooks verwijderd uit ${file}.`);
+}
+
 function main() {
   const args = process.argv.slice(2);
   const action = args[0];
   const flag = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
-  const file = flag('--settings') || join(homedir(), '.claude', 'settings.json');
+  const file = flag('--settings') || DEFAULT_SETTINGS;
   const port = Number(flag('--port')) || Number(process.env.VAO_PORT) || 4747;
 
   if (action !== 'install' && action !== 'uninstall') {
     console.error('Gebruik: node hooks/install.js install|uninstall [--settings <pad>] [--port <n>]');
     process.exit(1);
   }
-
-  let settings = {};
-  if (existsSync(file)) {
-    try {
-      settings = JSON.parse(readFileSync(file, 'utf8'));
-    } catch (err) {
-      console.error(`Kan ${file} niet lezen als JSON: ${err.message}. Er is niets gewijzigd.`);
-      process.exit(1);
-    }
-    const backup = `${file}.vao-backup-${new Date().toISOString().replace(/[:.]/g, '-')}`;
-    copyFileSync(file, backup);
-    console.log(`Backup: ${backup}`);
-  } else {
-    mkdirSync(dirname(file), { recursive: true });
+  try {
+    updateSettings(action, { file, port });
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
   }
-
-  settings = action === 'install' ? addHooks(settings, port) : removeHooks(settings);
-  writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
-  console.log(action === 'install'
-    ? `Hooks geïnstalleerd in ${file} (${EVENTS.length} events → poort ${port}). Nieuwe sessies worden direct opgepikt.`
-    : `Hooks verwijderd uit ${file}.`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
