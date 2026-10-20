@@ -25,5 +25,5 @@
 - [x] Phase 2: Design Complete (ADR-003)
 - [x] Phase 3: Planning Complete (U1–U5)
 - [x] Phase 4: Implementation Complete (U1–U4)
-- [x] Phase 5: Verification Complete (30/30, visual demo day/evening/night, phone)
+- [x] Phase 5: Verification Complete (29/29, visual demo day/evening/night, phone)
 - [x] Phase 6: Delivery Complete — restart server to activate
