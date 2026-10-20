@@ -1,2 +1,2 @@
-# Handoff → DevOps / SRE
-Release-ready for local use. No deploy target; run via npm start. Live hook check pending user approval.
+# Handoff
+Done. Run: npm start → http://127.0.0.1:4747. Runbook: .10x/decisions/sre/visual-agents-office.md. Remaining: T7 live hook check.
