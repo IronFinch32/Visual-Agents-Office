@@ -27,3 +27,7 @@
 - [x] Phase 4: Implementation Complete (U1–U4)
 - [x] Phase 5: Verification Complete (29/29, visual demo day/evening/night, phone)
 - [x] Phase 6: Delivery Complete — restart server to activate
+
+# Status — distribution
+- [x] CLI + README + LICENSE, verified from clean clone
+- [ ] Push to GitHub (waiting for repo URL + author email decision)
