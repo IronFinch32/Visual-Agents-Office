@@ -1,73 +1,93 @@
 # Visual Agents Office
 
-Een pixel-art kantoor dat live laat zien welke Claude Code agents er draaien, wat ze doen, en wie er op jou wacht. Zet het fullscreen op een tweede scherm.
+Een live pixel-art kantoor dat laat zien welke **Claude Code** agents er op je computer draaien, wat ze doen en **wie er op jou wacht**. Zet het op een tweede scherm en volg je agents zonder de hele tijd door sessies te klikken.
 
-| Status | Zo zie je het |
-|---|---|
-| 🟦 Werkt | typt aan bureau, blauwe ballon met de huidige actie ("Bewerkt server.js") |
-| 🟥 Wacht op jou | hand omhoog, knipperend rood `!`, rode gloed, rode ballon met de reden, tab-titel `(1) wacht` |
-| 🟩 Klaar | handen achter het hoofd, koffie, groen ✓ |
-| ⚪ Idle | zzz |
+- **Een kantoor per project.** Elke projectmap (git-root; worktrees tellen mee) is een kamer in het gebouw.
+- **Sessies zijn managers**, met hun opdracht op het whiteboard aan de muur.
+- **Elke subagent heeft een eigen bureau**, met een ballon die zegt wat hij doet en een beeldscherm dat de tool laat zien (terminal, code, zoeken, web, …).
+- **Wacht er iemand op jou**, dan steekt hij zijn hand op, knippert er een rood `!`, worden de andere kamers gedimd en staat hij in een rode spotlight. De browsertab toont `(1) wacht`, en een belletje is optioneel.
+- **Klaar?** Subagents lopen naar de koffiecorner; managers leunen achterover met koffie.
+- Het licht volgt je klok: overdag zon door de ramen, 's avonds en 's nachts bureaulampjes.
 
-**Een kantoor per project.** Elke projectmap (git-root; worktrees tellen mee met hun repo) is een kamer in het gebouw:
-- bovenin op het paarse tapijt zitten de **sessies als managers**;
-- daaronder heeft **elke subagent een eigen bureau**, met een pet en bureaurand in de kleur van zijn manager, een naambordje (Explore, Plan, …) en een ballon met wat hij doet;
-- klare subagents blijven met ✓ en koffie zitten tot hun sessie een nieuwe opdracht krijgt (of 10 minuten);
-- de kamer groeit mee met het team; een kamer met iemand die wacht knippert rood.
+## Vereisten
 
-**Wat je ziet in een kamer**
-- Op het **whiteboard** aan de muur staat de opdracht van elke manager; de ballon toont alleen de huidige actie.
-- Het **beeldscherm** laat zien welke tool er draait: terminalregels (Bash), code (Read/Edit/Write), vergrootglas (Grep/Glob), wereldbol (web), stekker (MCP), poppetjes (subagent starten), een vraagteken (vraag aan jou), ✓ als het klaar is.
-- **Uiterlijk per type**: manager in pak met stropdas, Explore met ontdekkingshoed, Plan met bril en klembord, general-purpose in hoodie, overige types met pet. Armband, pet en bureaurand hebben de kleur van hun manager.
-- Klare subagents lopen naar de **koffiecorner**.
-- **Licht volgt je klok**: overdag zonlicht door de ramen, 's avonds en 's nachts donker met bureaulampjes bij wie werkt. Forceren kan met `?tijd=dag`, `?tijd=avond` of `?tijd=nacht` achter de URL.
-- Wacht er iemand, dan worden de andere kamers gedimd en staat er een rode lichtkegel op de wachtende agent.
+- [Node.js](https://nodejs.org) 20 of nieuwer
+- [Claude Code](https://claude.com/claude-code) (terminal, desktop app of IDE)
+- `curl` (standaard aanwezig op macOS en Linux)
 
-Klik op een kamer om in te zoomen (`Esc` of "← Gebouw" om terug te gaan). Wacht er iemand in een ander kantoor, dan zie je bovenin een rode melding waarmee je er direct heen springt. Een sessie die stopt, loopt de deur uit; een lege kamer verdwijnt.
+## Starten
 
-## Gebruik
-
-Vereist Node 20+ (geen `npm install` nodig, geen dependencies).
+Eén commando, zonder iets te clonen:
 
 ```bash
+npx github:GITHUB_USER/visual-agents-office
+```
+
+De eerste keer vraagt het of de Claude Code hooks geïnstalleerd mogen worden. Daarna start het kantoor op http://127.0.0.1:4747 en opent je browser. Nieuwe en lopende Claude Code sessies verschijnen bij hun volgende actie.
+
+Liever een lokale kopie:
+
+```bash
+git clone https://github.com/GITHUB_USER/visual-agents-office.git
+cd visual-agents-office
 npm start
 ```
 
-Open http://127.0.0.1:4747. Eenmalig de Claude Code hooks installeren (maakt een backup van `~/.claude/settings.json`):
+Er zijn geen dependencies, dus `npm install` is niet nodig.
 
-```bash
-npm run install-hooks
-```
+## Commando's
 
-Nieuwe en lopende sessies verschijnen bij hun volgende actie. Verwijderen:
+| Commando | Wat het doet |
+|---|---|
+| `npm start` / `npx github:GITHUB_USER/visual-agents-office` | Start het kantoor en opent de browser. Biedt aan de hooks te installeren als die ontbreken. |
+| `npm run setup` (of `… setup`) | Installeert alleen de hooks. |
+| `npm run uninstall-hooks` (of `… uninstall`) | Verwijdert de hooks weer. |
+| `npm run demo` (of `… demo`) | Stuurt nep-agents naar een draaiend kantoor, om het uit te proberen. |
+| `npm test` | Draait de tests. |
 
-```bash
-npm run uninstall-hooks
-```
+Opties: `--port <n>` (standaard 4747, of de omgevingsvariabele `VAO_PORT`), `--no-open` (browser niet openen) en `--yes` (hooks installeren zonder te vragen). Met npm geef je ze door na `--`, bijvoorbeeld `npm start -- --port 5000`. Gebruik bij een andere poort dezelfde `--port` voor `setup`.
 
-Uitproberen zonder echte agents (server moet draaien):
-
-```bash
-npm run demo
-```
-
-Tests:
-
-```bash
-npm test
-```
+In de browser:
+- Klik op een kamer om in te zoomen; terug met `Esc` of "← Gebouw".
+- Plak `?tijd=dag`, `?tijd=avond` of `?tijd=nacht` achter de URL om de belichting te forceren.
+- Met ☰ toon of verberg je de zijbalk, en met 🔕 zet je het belletje aan of uit.
 
 ## Hoe het werkt
 
 ```
-Claude Code ──hook (curl, max 1s, stil)──▶ POST /event ──▶ state.js ──SSE /stream──▶ canvas-kantoor
+Claude Code ──hook (curl, max 1 s, stil)──▶ POST 127.0.0.1:4747/event
+                                                    │
+                                     server/state.js (status per agent)
+                                                    │
+                                SSE /stream ──▶ web/ (canvas-kantoor per project)
 ```
 
-- De hooks staan in `~/.claude/settings.json` en gelden voor terminal-sessies én de Code-tab van de desktop app.
-- Draait de server niet, dan faalt de `curl` stil en merkt Claude er niets van.
-- De server luistert alleen op `127.0.0.1` en weigert vreemde `Origin`/`Host` headers. Prompts verlaten je Mac niet.
-- Status leeft in het geheugen. Na een herstart verschijnen agents weer bij hun volgende event. Sessies zonder events na 30 minuten verdwijnen vanzelf.
+- `setup` voegt hooks toe aan `~/.claude/settings.json` voor sessie-, prompt-, tool-, toestemmings-, notificatie-, stop- en subagent-events. Er wordt eerst een backup gemaakt (`settings.json.vao-backup-…`), bestaande hooks blijven staan, en `uninstall` verwijdert alleen de eigen hooks.
+- Draait het kantoor niet, dan faalt de hook stil en merkt Claude Code er niets van.
+- **Privacy:** de server luistert alleen op `127.0.0.1` en weigert verzoeken van andere websites (Origin- en Host-check). Je prompts verlaten je computer niet en worden niet opgeslagen; alles staat alleen in het geheugen.
+- Agents zonder activiteit verdwijnen na 30 minuten. Klare subagents blijven staan tot hun sessie een nieuwe opdracht krijgt (of maximaal 10 minuten).
 
-Instellingen: `VAO_PORT` (standaard 4747; gebruik dezelfde poort bij `install-hooks --port`), `VAO_DEBUG=1` logt elk event.
+## Problemen oplossen
 
-Projectdocumentatie (spec, ADR, beslissingen per rol) staat in `.10x/`.
+| Probleem | Oplossing |
+|---|---|
+| Het kantoor blijft leeg | Zijn de hooks geïnstalleerd (`npm run setup`)? Doe iets in een Claude Code sessie; de sessie verschijnt bij de volgende actie. Start met `VAO_DEBUG=1 npm start` om elk binnenkomend event te zien. |
+| "Poort 4747 is al in gebruik" | Er draait al iets anders op die poort. Kies er een met `--port` en installeer de hooks voor die poort. |
+| Een agent staat in het verkeerde kantoor | Het kantoor is de dichtstbijzijnde map met `.git` boven de werkmap van de sessie. |
+| Poppetjes staan stil | Browsers vertragen tabs op de achtergrond; ze lopen bij zodra de tab zichtbaar is. |
+
+Windows is niet getest. De hooks gebruiken `sh`-syntax en `curl`.
+
+## Project
+
+```
+bin/        startcommando (start, setup, uninstall, demo)
+server/     HTTP + SSE server en de status-state-machine
+hooks/      installer voor ~/.claude/settings.json
+web/        de browser-app (canvas, geen build-stap)
+scripts/    demo
+test/       node:test tests
+.10x/       ontwerpdocumenten, ADR's en reviews
+```
+
+Licentie: [MIT](LICENSE)
