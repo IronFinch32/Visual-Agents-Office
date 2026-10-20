@@ -1,2 +1,2 @@
-# Handoff → Architect (project-offices)
-Approved: room per project folder, subagents at own desks, building grid + focus. See spec.
+# Handoff → EM (project-offices)
+ADR-002: canvas per room in CSS grid; projectKey on server; subagent TTL change.

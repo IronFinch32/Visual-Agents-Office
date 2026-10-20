@@ -6,3 +6,4 @@
 
 ## Active features
 - [visual-agents-office](visual-agents-office.md) — ADR-001
+- [project-offices](project-offices.md) — ADR-002
