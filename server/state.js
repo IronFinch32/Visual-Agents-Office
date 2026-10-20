@@ -48,7 +48,10 @@ export function describeTool(name, input = {}) {
     case 'TodoWrite': return 'Werkt takenlijst bij';
     default: {
       const m = /^mcp__(.+?)__(.+)$/.exec(name || '');
-      if (m) return `${m[2]} (${m[1]})`;
+      if (m) {
+        const pretty = (s) => s.replace(/^(plugin_[^_]+_|ccd_|mcp_)/, '').replace(/[_-]+/g, ' ').trim();
+        return `${pretty(m[2])} · ${pretty(m[1])}`;
+      }
       return name ? `Gebruikt ${name}` : 'Aan het werk';
     }
   }

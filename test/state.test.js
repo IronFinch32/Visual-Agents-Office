@@ -125,6 +125,7 @@ test('describeTool covers common tools and MCP', () => {
   assert.equal(describeTool('Bash', { command: 'npm test', description: 'Runs tests' }), 'Runs tests');
   assert.equal(describeTool('Edit', { file_path: '/a/b/server.js' }), 'Bewerkt server.js');
   assert.equal(describeTool('WebFetch', { url: 'https://example.com/x' }), 'Leest example.com');
-  assert.equal(describeTool('mcp__github__create_pr', {}), 'create_pr (github)');
+  assert.equal(describeTool('mcp__github__create_pr', {}), 'create pr · github');
+  assert.equal(describeTool('mcp__Claude_Browser__browser_batch', {}), 'browser batch · Claude Browser');
   assert.equal(describeTool('Weird', null), 'Gebruikt Weird');
 });

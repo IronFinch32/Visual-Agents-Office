@@ -8,4 +8,4 @@
 - [x] Phase 6: Delivery Complete (local tool; runbook in decisions/sre)
 
 ## Open
-- T7: live check with real sessions — needs user approval to run `npm run install-hooks`.
+- T7 done (hooks installed, live sessions + subagents verified). Waiting state still to observe from a real permission prompt.
