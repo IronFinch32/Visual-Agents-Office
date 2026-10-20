@@ -85,7 +85,10 @@ button[aria-pressed="true"] { border-color: var(--done); }
 }
 .building.focused .room { cursor: zoom-out; }
 .building.focused .room:not(.focus) { display: none; }
-.room.waiting { border-color: var(--waiting); animation: roomblink 1s steps(2) infinite; }
+.room { transition: filter .4s; }
+.building.alert .room:not(.waiting) { filter: brightness(.55) saturate(.6); }
+.room.waiting { border-color: var(--waiting); box-shadow: 0 0 24px 6px rgba(255, 77, 94, .55); animation: roomblink 1s steps(2) infinite; }
+.room-title { background: linear-gradient(#ecd27a, #b8902f); color: #3a2a10; padding: 0 6px; border: 1px solid #7a5a1a; }
 @keyframes roomblink { 50% { border-color: #11131d; } }
 .room header {
   /* the canvas decides the room width; the header never widens it */

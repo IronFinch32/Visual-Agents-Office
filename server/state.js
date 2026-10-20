@@ -1,7 +1,7 @@
 // Pure state machine: Claude Code hook events -> agents in the office.
 // No I/O here so it is easy to test.
 
-export const LIMITS = { task: 140, activity: 80, reason: 120, name: 40 };
+export const LIMITS = { task: 140, activity: 80, reason: 120, name: 40, tool: 60 };
 export const STALE_MS = 30 * 60 * 1000;
 export const SUBAGENT_DONE_TTL_MS = 10 * 60 * 1000;
 
@@ -175,10 +175,12 @@ export function applyEvent(state, evt, now = Date.now()) {
       setStatus(target, 'working', now);
       target.task = truncate(evt.prompt, LIMITS.task);
       target.activity = 'Denkt na';
+      target.tool = '';
       break;
     case 'PreToolUse': {
       const desc = truncate(describeTool(evt.tool_name, evt.tool_input), LIMITS.activity);
       target.activity = desc;
+      target.tool = truncate(evt.tool_name, LIMITS.tool);
       if (WAITING_TOOLS.has(evt.tool_name)) {
         setStatus(target, 'waiting', now);
         target.waitingReason = desc;
@@ -214,6 +216,7 @@ export function applyEvent(state, evt, now = Date.now()) {
     case 'StopFailure':
       setStatus(target, 'done', now);
       target.activity = name === 'StopFailure' ? 'Gestopt met fout' : 'Klaar';
+      target.tool = '';
       break;
     case 'SubagentStart': {
       const sub = evt.agent_id ? target : null;
@@ -224,6 +227,7 @@ export function applyEvent(state, evt, now = Date.now()) {
       if (target.kind === 'subagent') {
         setStatus(target, 'done', now);
         target.activity = 'Klaar';
+        target.tool = '';
         target.task = target.task || truncate(evt.last_assistant_message, LIMITS.task);
       }
       break;

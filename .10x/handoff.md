@@ -1,2 +1,2 @@
-# Handoff → SDE (office-polish)
-Do U1–U5 (decisions/engineering-manager/office-polish.md). ADR-003.
+# Handoff
+office-polish delivered. Restart server (npm start). Try ?tijd=nacht.

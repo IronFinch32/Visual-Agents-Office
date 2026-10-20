@@ -1,5 +1,9 @@
 // The building: one room per project, laid out to fit the screen, with click-to-focus.
 import { createRoom } from './room.js';
+import { timePhase } from './sprites.js';
+
+const timeOverride = new URLSearchParams(location.search).get('tijd') || '';
+const phase = () => timePhase(new Date(), timeOverride);
 
 const GAP = 16;
 const PAD = 16;
@@ -35,7 +39,7 @@ export function createBuilding(container, { banner, backButton } = {}) {
     section.append(header, canvas);
     section.addEventListener('click', () => focus(focusKey === key ? null : key));
     container.append(section);
-    const entry = { el: section, room: createRoom(canvas), title, counts, name, waiting: false };
+    const entry = { el: section, room: createRoom(canvas, { phase }), title, counts, name, waiting: false };
     rooms.set(key, entry);
     order.push(key);
     return entry;
@@ -67,6 +71,7 @@ export function createBuilding(container, { banner, backButton } = {}) {
         r.counts.append(chip);
       }
     }
+    container.classList.toggle('alert', [...rooms.values()].some((r) => r.waiting));
     if (focusKey && !rooms.has(focusKey)) focus(null);
     updateBanner();
     layout();
@@ -103,12 +108,32 @@ export function createBuilding(container, { banner, backButton } = {}) {
   }
 
   function focus(key) {
+    // FLIP: remember where rooms were, change the layout, then animate from old to new.
+    const before = new Map([...rooms].map(([k, r]) => [k, r.el.getBoundingClientRect()]));
     focusKey = key;
     container.classList.toggle('focused', !!key);
     for (const [k, r] of rooms) r.el.classList.toggle('focus', k === key);
     if (backButton) backButton.hidden = !key;
     updateBanner();
     layout();
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    for (const [k, r] of rooms) {
+      const to = r.el.getBoundingClientRect();
+      const from = before.get(k);
+      if (!to.width) continue;
+      if (!from || !from.width) {
+        r.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250, easing: 'ease-out' });
+        continue;
+      }
+      const dx = from.left - to.left;
+      const dy = from.top - to.top;
+      const sx = from.width / to.width;
+      const sy = from.height / to.height;
+      r.el.animate([
+        { transformOrigin: 'top left', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
+        { transformOrigin: 'top left', transform: 'none' },
+      ], { duration: 320, easing: 'cubic-bezier(.2, .8, .2, 1)' });
+    }
   }
 
   function updateBanner() {

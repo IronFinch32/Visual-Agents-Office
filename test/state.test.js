@@ -168,3 +168,15 @@ test('cd inside a session keeps it in the same office; projectRoot is applied', 
   applyEvent(st, { session_id: 'a', cwd: '/r/other', hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: {} }, 2);
   assert.equal(get(st, 'a').projectKey, '/r/app');
 });
+
+test('tool field tracks the last tool and clears on prompt/stop', () => {
+  const st = createState();
+  applyEvent(st, ev('PreToolUse', { tool_name: 'Bash', tool_input: { command: 'ls' } }), 1);
+  assert.equal(get(st).tool, 'Bash');
+  applyEvent(st, ev('Stop'), 2);
+  assert.equal(get(st).tool, '');
+  applyEvent(st, ev('PreToolUse', { agent_id: 'a', tool_name: 'Grep', tool_input: {} }), 3);
+  assert.equal(get(st, 's1:a').tool, 'Grep');
+  applyEvent(st, ev('SubagentStop', { agent_id: 'a' }), 4);
+  assert.equal(get(st, 's1:a').tool, '');
+});
