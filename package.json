@@ -11,6 +11,11 @@
     "pixel-art"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IronFinch32/Visual-Agents-Office.git"
+  },
+  "homepage": "https://github.com/IronFinch32/Visual-Agents-Office#readme",
   "type": "module",
   "bin": {
     "visual-agents-office": "bin/visual-agents-office.js"

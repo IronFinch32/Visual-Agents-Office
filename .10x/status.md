@@ -30,4 +30,4 @@
 
 # Status — distribution
 - [x] CLI + README + LICENSE, verified from clean clone
-- [ ] Push to GitHub (waiting for repo URL + author email decision)
+- [ ] Push to GitHub: https://github.com/IronFinch32/Visual-Agents-Office

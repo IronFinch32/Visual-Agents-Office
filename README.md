@@ -20,7 +20,7 @@ Een live pixel-art kantoor dat laat zien welke **Claude Code** agents er op je c
 Eén commando, zonder iets te clonen:
 
 ```bash
-npx github:GITHUB_USER/visual-agents-office
+npx github:IronFinch32/Visual-Agents-Office
 ```
 
 De eerste keer vraagt het of de Claude Code hooks geïnstalleerd mogen worden. Daarna start het kantoor op http://127.0.0.1:4747 en opent je browser. Nieuwe en lopende Claude Code sessies verschijnen bij hun volgende actie.
@@ -28,8 +28,8 @@ De eerste keer vraagt het of de Claude Code hooks geïnstalleerd mogen worden. D
 Liever een lokale kopie:
 
 ```bash
-git clone https://github.com/GITHUB_USER/visual-agents-office.git
-cd visual-agents-office
+git clone https://github.com/IronFinch32/Visual-Agents-Office.git
+cd Visual-Agents-Office
 npm start
 ```
 
@@ -39,7 +39,7 @@ Er zijn geen dependencies, dus `npm install` is niet nodig.
 
 | Commando | Wat het doet |
 |---|---|
-| `npm start` / `npx github:GITHUB_USER/visual-agents-office` | Start het kantoor en opent de browser. Biedt aan de hooks te installeren als die ontbreken. |
+| `npm start` / `npx github:IronFinch32/Visual-Agents-Office` | Start het kantoor en opent de browser. Biedt aan de hooks te installeren als die ontbreken. |
 | `npm run setup` (of `… setup`) | Installeert alleen de hooks. |
 | `npm run uninstall-hooks` (of `… uninstall`) | Verwijdert de hooks weer. |
 | `npm run demo` (of `… demo`) | Stuurt nep-agents naar een draaiend kantoor, om het uit te proberen. |
