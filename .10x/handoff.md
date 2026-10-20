@@ -1,2 +1,2 @@
-# Handoff → SDE
-Implement T1–T6 in order per decisions/senior-engineer. T7 needs user approval to install hooks into ~/.claude/settings.json.
+# Handoff → QA / Security
+Built per decisions/sde. Test: npm test, npm run demo + browser. Review: server.js network surface, install.js settings editing.
