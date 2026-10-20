@@ -1,9 +1,10 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createState, applyEvent, prune, snapshot } from './state.js';
+import { createTenx } from './tenx.js';
 
 const WEB_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'web');
 const MAX_BODY = 256 * 1024;
@@ -34,13 +35,41 @@ export function gitRootResolver(exists = existsSync) {
   };
 }
 
-export function createServer({ debug = false, projectRoot = gitRootResolver() } = {}) {
+// Read-only file access for 10x mode (ADR-006): small text files and directory listings.
+export const nodeFs = {
+  exists: (p) => existsSync(p),
+  readText: (p) => {
+    try {
+      if (statSync(p).size > 256 * 1024) return '';
+      return readFileSync(p, 'utf8');
+    } catch {
+      return '';
+    }
+  },
+  list: (dir) => {
+    try {
+      return readdirSync(dir, { withFileTypes: true })
+        .filter((d) => d.isFile())
+        .map((d) => ({ name: d.name, mtimeMs: statSync(join(dir, d.name)).mtimeMs }));
+    } catch {
+      return [];
+    }
+  },
+};
+
+export function createServer({ debug = false, projectRoot = gitRootResolver(), fs = nodeFs } = {}) {
   const state = createState({ projectRoot });
+  const tenx = createTenx({ fs });
   const clients = new Set();
   let pending = null;
 
+  function fullSnapshot() {
+    const agents = snapshot(state);
+    return { agents, tenx: tenx.snapshot(new Set(agents.map((a) => a.projectKey))), now: Date.now() };
+  }
+
   function send(res) {
-    res.write(`event: snapshot\ndata: ${JSON.stringify({ agents: snapshot(state), now: Date.now() })}\n\n`);
+    res.write(`event: snapshot\ndata: ${JSON.stringify(fullSnapshot())}\n\n`);
   }
 
   function broadcast() {
@@ -81,7 +110,9 @@ export function createServer({ debug = false, projectRoot = gitRootResolver() } 
       evt.source = src === 'codex' ? 'codex' : 'claude';
     }
     if (debug) console.log('[event]', evt.hook_event_name, evt.session_id, evt.agent_id || '', evt.tool_name || '');
-    if (applyEvent(state, evt, Date.now())) broadcast();
+    let changed = applyEvent(state, evt, Date.now());
+    if (evt && evt.session_id && tenx.onEvent(evt, state.agents.get(String(evt.session_id)))) changed = true;
+    if (changed) broadcast();
     res.writeHead(204).end();
   }
 
@@ -114,7 +145,14 @@ export function createServer({ debug = false, projectRoot = gitRootResolver() } 
     }
     if (req.method === 'GET' && path === '/api/state') {
       res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ agents: snapshot(state), now: Date.now() }));
+      res.end(JSON.stringify(fullSnapshot()));
+      return;
+    }
+    if (req.method === 'GET' && path === '/api/decision') {
+      const q = new URL(req.url, 'http://x').searchParams;
+      const decision = tenx.readDecision(q.get('project') || '', q.get('role') || '');
+      res.writeHead(decision ? 200 : 404, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(decision || { error: 'not found' }));
       return;
     }
     if (req.method === 'GET') return void serveStatic(req, res);
@@ -122,7 +160,7 @@ export function createServer({ debug = false, projectRoot = gitRootResolver() } 
   });
 
   const timers = [
-    setInterval(() => { if (prune(state, Date.now())) broadcast(); }, 5_000),
+    setInterval(() => { if (prune(state, Date.now()) | tenx.tick()) broadcast(); }, 5_000),
     setInterval(() => { for (const res of clients) res.write(': ping\n\n'); }, 15_000),
   ];
   timers.forEach((t) => t.unref());
@@ -131,7 +169,7 @@ export function createServer({ debug = false, projectRoot = gitRootResolver() } 
     for (const res of clients) res.end();
   });
 
-  return { server, state };
+  return { server, state, tenx };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
