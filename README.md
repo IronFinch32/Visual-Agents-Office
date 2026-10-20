@@ -1,6 +1,6 @@
 # Visual Agents Office
 
-Een live pixel-art kantoor dat laat zien welke **Claude Code** agents er op je computer draaien, wat ze doen en **wie er op jou wacht**. Zet het op een tweede scherm en volg je agents zonder de hele tijd door sessies te klikken.
+Een live pixel-art kantoor dat laat zien welke **Claude Code**- en **Codex**-agents er op je computer draaien, wat ze doen en **wie er op jou wacht**. Zet het op een tweede scherm en volg je agents zonder de hele tijd door sessies te klikken.
 
 - **Een kantoor per project.** Elke projectmap (git-root; worktrees tellen mee) is een kamer in het gebouw.
 - **Sessies zijn managers**, met hun opdracht op het whiteboard aan de muur.
@@ -8,11 +8,12 @@ Een live pixel-art kantoor dat laat zien welke **Claude Code** agents er op je c
 - **Wacht er iemand op jou**, dan steekt hij zijn hand op, knippert er een rood `!`, worden de andere kamers gedimd en staat hij in een rode spotlight. De browsertab toont `(1) wacht`, en een belletje is optioneel.
 - **Klaar?** Subagents lopen naar de koffiecorner; managers leunen achterover met koffie.
 - Het licht volgt je klok: overdag zon door de ramen, 's avonds en 's nachts bureaulampjes.
+- **Claude en Codex door elkaar.** Een klein label op elk naambordje (`claude` of `codex`) laat zien welke tool een agent aanstuurt; werken ze aan hetzelfde project, dan zitten ze in hetzelfde kantoor.
 
 ## Vereisten
 
 - [Node.js](https://nodejs.org) 20 of nieuwer
-- [Claude Code](https://claude.com/claude-code) (terminal, desktop app of IDE)
+- [Claude Code](https://claude.com/claude-code) en/of [Codex](https://developers.openai.com/codex) (CLI)
 - `curl` (standaard aanwezig op macOS en Linux)
 
 ## Starten
@@ -23,7 +24,17 @@ Eén commando, zonder iets te clonen:
 npx github:IronFinch32/Visual-Agents-Office
 ```
 
-De eerste keer vraagt het of de Claude Code hooks geïnstalleerd mogen worden. Daarna start het kantoor op http://127.0.0.1:4747 en opent je browser. Nieuwe en lopende Claude Code sessies verschijnen bij hun volgende actie.
+De eerste keer vraag je met welke tool je werkt:
+
+```
+Met welke agent-tool werk je?
+  1) Claude Code   (gevonden)
+  2) Codex         (niet gevonden)
+  3) Allebei
+Keuze [1]:
+```
+
+De standaardkeuze is wat er op je computer gevonden is. Daarna worden de hooks voor die tool(s) geïnstalleerd. Daarna start het kantoor op http://127.0.0.1:4747 en opent je browser. Nieuwe en lopende Claude Code sessies verschijnen bij hun volgende actie.
 
 Liever een lokale kopie:
 
@@ -34,6 +45,10 @@ npm start
 ```
 
 Er zijn geen dependencies, dus `npm install` is niet nodig.
+
+### Codex: hooks eenmalig vertrouwen
+
+Codex voert nieuwe hooks pas uit nadat je ze vertrouwt. Open na `setup` Codex, typ `/hooks` en markeer de Visual Agents Office-hooks als vertrouwd. Dat hoeft maar één keer, en opnieuw als de hooks veranderen.
 
 ### Altijd laten draaien
 
@@ -58,8 +73,8 @@ Docker is bewust niet gebruikt: de server moet je projectmappen kunnen zien (om 
 | Commando | Wat het doet |
 |---|---|
 | `npm start` / `npx github:IronFinch32/Visual-Agents-Office` | Start het kantoor en opent de browser. Biedt aan de hooks te installeren als die ontbreken. |
-| `npm run setup` (of `… setup`) | Installeert alleen de hooks. |
-| `npm run uninstall-hooks` (of `… uninstall`) | Verwijdert de hooks weer. |
+| `npm run setup` (of `… setup`) | Kies Claude Code, Codex of allebei en installeer alleen de hooks. Zonder menu kan het met `--claude`, `--codex` of `--all`. |
+| `npm run uninstall-hooks` (of `… uninstall`) | Verwijdert de hooks weer, uit Claude Code én Codex. |
 | `npm run demo` (of `… demo`) | Stuurt nep-agents naar een draaiend kantoor, om het uit te proberen. |
 | `npm run autostart` (of `… autostart`) | Start het kantoor automatisch bij elke login. Met `--off` zet je dat weer uit. |
 | `npm test` | Draait de tests. |
@@ -81,7 +96,7 @@ Claude Code ──hook (curl, max 1 s, stil)──▶ POST 127.0.0.1:4747/event
                                 SSE /stream ──▶ web/ (canvas-kantoor per project)
 ```
 
-- `setup` voegt hooks toe aan `~/.claude/settings.json` voor sessie-, prompt-, tool-, toestemmings-, notificatie-, stop- en subagent-events. Er wordt eerst een backup gemaakt (`settings.json.vao-backup-…`), bestaande hooks blijven staan, en `uninstall` verwijdert alleen de eigen hooks.
+- `setup` voegt hooks toe aan `~/.claude/settings.json` (Claude Code) en/of `~/.codex/hooks.json` (Codex) voor sessie-, prompt-, tool-, toestemmings-, stop- en subagent-events. Codex-hooks sturen `?src=codex` mee, zodat het kantoor weet welke tool het is. Er wordt eerst een backup gemaakt (`settings.json.vao-backup-…`), bestaande hooks blijven staan, en `uninstall` verwijdert alleen de eigen hooks.
 - Draait het kantoor niet, dan faalt de hook stil en merkt Claude Code er niets van.
 - **Privacy:** de server luistert alleen op `127.0.0.1` en weigert verzoeken van andere websites (Origin- en Host-check). Je prompts verlaten je computer niet en worden niet opgeslagen; alles staat alleen in het geheugen.
 - Agents zonder activiteit verdwijnen na 30 minuten. Klare subagents blijven staan tot hun sessie een nieuwe opdracht krijgt (of maximaal 10 minuten).
@@ -95,6 +110,9 @@ Claude Code ──hook (curl, max 1 s, stil)──▶ POST 127.0.0.1:4747/event
 | Een agent staat in het verkeerde kantoor | Het kantoor is de dichtstbijzijnde map met `.git` boven de werkmap van de sessie. |
 | Poppetjes staan stil | Browsers vertragen tabs op de achtergrond; ze lopen bij zodra de tab zichtbaar is. |
 
+| Codex-agents verschijnen niet | Heb je de hooks vertrouwd via `/hooks` in Codex? |
+| Codex-subagent typt niet aan zijn bureau | Codex stuurt bij tool-events van subagents (nog) geen `agent_id` mee; hun activiteit staat daarom bij de manager. Starten en klaar zijn zie je wel. |
+
 Windows is niet getest. De hooks gebruiken `sh`-syntax en `curl`.
 
 ## Project
@@ -103,7 +121,7 @@ Windows is niet getest. De hooks gebruiken `sh`-syntax en `curl`.
 bin/        startcommando (start, setup, uninstall, demo, autostart)
 service/    autostart via launchd / systemd / Taakplanner
 server/     HTTP + SSE server en de status-state-machine
-hooks/      installer voor ~/.claude/settings.json
+hooks/      installer voor ~/.claude/settings.json en ~/.codex/hooks.json
 web/        de browser-app (canvas, geen build-stap)
 scripts/    demo
 test/       node:test tests

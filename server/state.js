@@ -63,7 +63,13 @@ export function describeTool(name, input = {}) {
     case 'Task': return `Start ${i.subagent_type || 'subagent'}: ${i.description || ''}`;
     case 'AskUserQuestion': return 'Stelt je een vraag';
     case 'ExitPlanMode': return 'Wacht op akkoord voor plan';
-    case 'TodoWrite': return 'Werkt takenlijst bij';
+    case 'TodoWrite':
+    case 'update_plan': return 'Werkt takenlijst bij';
+    case 'apply_patch': {
+      // Codex: the patch text names the files it touches.
+      const m = /\*\*\* (?:Update|Add|Delete) File: (.+)/.exec(typeof i.input === 'string' ? i.input : typeof i.patch === 'string' ? i.patch : typeof i.command === 'string' ? i.command : '');
+      return m ? `Bewerkt ${basename(m[1].trim())}` : 'Bewerkt bestanden';
+    }
     default: {
       const m = /^mcp__(.+?)__(.+)$/.exec(name || '');
       if (m) {
@@ -93,6 +99,7 @@ function sessionAgent(state, evt, now) {
       startedAt: now,
       updatedAt: now,
       statusSince: now,
+      source: evt.source === 'codex' ? 'codex' : 'claude',
     };
     setProject(state, a, evt.cwd);
     state.agents.set(id, a);
@@ -132,6 +139,7 @@ function subAgent(state, evt, parent, now) {
   if (evt.agent_type) a.name = truncate(evt.agent_type, LIMITS.name);
   a.projectKey = parent.projectKey;
   a.project = parent.project;
+  a.source = parent.source;
   return a;
 }
 
@@ -211,6 +219,11 @@ export function applyEvent(state, evt, now = Date.now()) {
         setStatus(target, 'waiting', now);
         target.waitingReason = truncate(evt.message || 'Wacht op input', LIMITS.reason);
       }
+      break;
+    case 'Interrupt':
+      setStatus(target, 'done', now);
+      target.activity = 'Onderbroken';
+      target.tool = '';
       break;
     case 'Stop':
     case 'StopFailure':

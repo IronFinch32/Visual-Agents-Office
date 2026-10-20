@@ -48,12 +48,12 @@ export function outfitFor(agent) {
 export function toolCategory(tool) {
   if (!tool) return 'idle';
   if (tool === 'Bash' || tool === 'BashOutput' || tool === 'KillShell') return 'terminal';
-  if (['Read', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit'].includes(tool)) return 'code';
+  if (['Read', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'apply_patch'].includes(tool)) return 'code';
   if (tool === 'Grep' || tool === 'Glob') return 'search';
   if (tool === 'WebFetch' || tool === 'WebSearch') return 'web';
   if (tool === 'Agent' || tool === 'Task' || tool === 'TaskOutput' || tool === 'SendMessage') return 'team';
   if (tool === 'AskUserQuestion' || tool === 'ExitPlanMode') return 'ask';
-  if (tool === 'TodoWrite') return 'todo';
+  if (tool === 'TodoWrite' || tool === 'update_plan') return 'todo';
   if (tool.startsWith('mcp__')) return 'plug';
   return 'other';
 }
@@ -501,11 +501,31 @@ export function drawBubble(ctx, cx, bottomY, text, { border = C.trim, bold = fal
   ctx.fillText(label, x + 4, y + h / 2 + 0.5);
 }
 
-export function drawNameplate(ctx, x, y, maxW, label, statusText, status, { light = false } = {}) {
+export const SOURCE_TAG = {
+  claude: { text: 'claude', bg: '#d97757' },
+  codex: { text: 'codex', bg: '#10a37f' },
+};
+
+export function drawNameplate(ctx, x, y, maxW, label, statusText, status, { light = false, source } = {}) {
   rect(ctx, x, y + 1, 5, 5, C[status] || C.idle);
+  // Small tag that says which tool runs this agent (Claude Code or Codex).
+  const tag = SOURCE_TAG[source];
+  let tagW = 0;
+  if (tag) {
+    ctx.font = `4px ${FONT}`;
+    tagW = Math.ceil(ctx.measureText(tag.text).width) + 4;
+  }
   ctx.font = `600 6px ${FONT}`;
   ctx.textBaseline = 'top';
-  const name = fit(ctx, label, maxW - 8);
+  const name = fit(ctx, label, maxW - 8 - (tag ? tagW + 2 : 0));
+  if (tag) {
+    const tx = x + 8 + Math.ceil(ctx.measureText(name).width) + 2;
+    rect(ctx, tx, y + 1, tagW, 5, tag.bg);
+    ctx.font = `4px ${FONT}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(tag.text, tx + 2, y + 1.5);
+    ctx.font = `600 6px ${FONT}`;
+  }
   ctx.fillStyle = C.shadow;
   ctx.fillText(name, x + 8, y + 0.5);
   ctx.fillStyle = C.text;

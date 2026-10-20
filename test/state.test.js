@@ -180,3 +180,20 @@ test('tool field tracks the last tool and clears on prompt/stop', () => {
   applyEvent(st, ev('SubagentStop', { agent_id: 'a' }), 4);
   assert.equal(get(st, 's1:a').tool, '');
 });
+
+test('source: sessions keep their tool, subagents inherit it; Interrupt and Codex tools', () => {
+  const st = createState();
+  applyEvent(st, { ...ev('SessionStart'), source: 'codex' }, 1);
+  applyEvent(st, { ...ev('SubagentStart', { agent_id: 'a' }), source: 'codex' }, 2);
+  assert.equal(get(st).source, 'codex');
+  assert.equal(get(st, 's1:a').source, 'codex');
+  applyEvent(st, { ...ev('PreToolUse', { tool_name: 'apply_patch', tool_input: { command: '*** Begin Patch\n*** Update File: src/app.ts\n@@' } }), source: 'codex' }, 3);
+  assert.equal(get(st).activity, 'Bewerkt app.ts');
+  applyEvent(st, { ...ev('PreToolUse', { tool_name: 'update_plan', tool_input: {} }), source: 'codex' }, 4);
+  assert.equal(get(st).activity, 'Werkt takenlijst bij');
+  applyEvent(st, { ...ev('Interrupt'), source: 'codex' }, 5);
+  assert.equal(get(st).status, 'done');
+  assert.equal(get(st).activity, 'Onderbroken');
+  applyEvent(st, ev('SessionStart', { session_id: 'c2' }), 6);
+  assert.equal(get(st, 'c2').source, 'claude');
+});

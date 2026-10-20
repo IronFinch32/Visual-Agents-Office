@@ -55,6 +55,7 @@ function card(a, now) {
   const li = el('li', `card ${a.status}${a.kind === 'subagent' ? ' sub' : ''}`);
   const row = el('div', 'row');
   row.append(el('span', `dot ${a.status}`), el('span', 'name', a.kind === 'session' ? (a.title || 'Manager') : a.name));
+  if (a.source) row.append(el('span', `src ${a.source}`, a.source));
   row.append(el('span', 'status', `${STATUS_LABEL[a.status] || a.status} · ${minutesSince(a.statusSince, now)}`));
   li.append(row);
   if (a.status === 'waiting') li.append(el('div', 'reason', a.waitingReason || 'Wacht op je input'));

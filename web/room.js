@@ -259,7 +259,7 @@ export function createRoom(canvas, { phase: getPhase } = {}) {
       if (a.status === 'waiting') spots.push({ x: ch.x, y: ch.y - 8 });
       const team = runningBySession.get(a.id);
       const statusText = STATUS_TEXT[a.status]?.(a, now) + (team ? ` · team ${team}` : '');
-      overlays.push(() => drawNameplate(ctx, deskX, managerDeskY() + 18, cell.w - 4, a.title || `Manager ${i + 1}`, statusText, a.status, { light: true }));
+      overlays.push(() => drawNameplate(ctx, deskX, managerDeskY() + 18, cell.w - 4, a.title || `Manager ${i + 1}`, statusText, a.status, { light: true, source: a.source }));
       if (seatedAtDesk(ch)) overlays.push(() => drawAgentOverlay(ch, cell.x0, cell.x0 + cell.w, cell.w - 4, t));
     }
 
@@ -273,7 +273,7 @@ export function createRoom(canvas, { phase: getPhase } = {}) {
       addDesk(workerSeat(i), cell.x0 + 6, cell.y0 + 36, 48, ch, { seed: i + 10, accent: ch && !ch.leaving ? ch.accent : null });
       if (!a || ch.leaving) continue;
       if (a.status === 'waiting') spots.push({ x: ch.x, y: ch.y - 8 });
-      overlays.push(() => drawNameplate(ctx, cell.x0 + 4, cell.y0 + 54, CELL_W - 4, a.name, STATUS_TEXT[a.status]?.(a, now), a.status));
+      overlays.push(() => drawNameplate(ctx, cell.x0 + 4, cell.y0 + 54, CELL_W - 4, a.name, STATUS_TEXT[a.status]?.(a, now), a.status, { source: a.source }));
       if (seatedAtDesk(ch)) overlays.push(() => drawAgentOverlay(ch, cell.x0, cell.x0 + CELL_W, CELL_W - 2, t));
     }
 

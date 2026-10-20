@@ -75,6 +75,11 @@ export function createServer({ debug = false, projectRoot = gitRootResolver() } 
       res.writeHead(400).end();
       return;
     }
+    if (evt && typeof evt === 'object') {
+      // Which tool sent it (ADR-005): hooks for Codex post to /event?src=codex.
+      const src = new URL(req.url, 'http://x').searchParams.get('src');
+      evt.source = src === 'codex' ? 'codex' : 'claude';
+    }
     if (debug) console.log('[event]', evt.hook_event_name, evt.session_id, evt.agent_id || '', evt.tool_name || '');
     if (applyEvent(state, evt, Date.now())) broadcast();
     res.writeHead(204).end();

@@ -64,3 +64,13 @@ test('gitRootResolver finds the nearest .git folder, falls back to cwd', () => {
   assert.equal(resolve('/r/app'), '/r/app');
   assert.equal(resolve('/tmp/x'), '/tmp/x');
 });
+
+test('?src=codex tags events; anything else is claude', () => withServer(async (base) => {
+  const body = (id) => JSON.stringify({ session_id: id, cwd: '/x', hook_event_name: 'SessionStart' });
+  await fetch(`${base}/event?src=codex`, { method: 'POST', body: body('c') });
+  await fetch(`${base}/event?src=<script>`, { method: 'POST', body: body('d') });
+  await fetch(`${base}/event`, { method: 'POST', body: body('e') });
+  const { agents } = await (await fetch(`${base}/api/state`)).json();
+  const src = Object.fromEntries(agents.map((a) => [a.id, a.source]));
+  assert.deepEqual(src, { c: 'codex', d: 'claude', e: 'claude' });
+}));

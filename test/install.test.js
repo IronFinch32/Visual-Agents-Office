@@ -57,3 +57,40 @@ test('hooksInstalled detects our hooks per port', async () => {
   updateSettings('uninstall', { file, port: 4747, log: () => {} });
   assert.equal(hooksInstalled(file, 4747), false);
 });
+
+test('Codex target: own events, ?src=codex, no matcher, keeps other keys', async () => {
+  const { addHooks, removeHooks, CODEX_EVENTS, hookCommand } = await import('../hooks/install.js');
+  const s = { description: 'mine', hooks: { Stop: [{ hooks: [theirs] }] } };
+  addHooks(s, 4747, 'codex');
+  for (const e of CODEX_EVENTS) assert.ok(s.hooks[e], e);
+  assert.ok(s.hooks.Interrupt);
+  assert.equal(s.hooks.Notification, undefined);
+  assert.equal(s.hooks.PreToolUse[0].matcher, undefined);
+  assert.match(hookCommand(4747, 'codex'), /\/event\?src=codex /);
+  assert.equal(hookCommand(4747), hookCommand(4747, 'claude'));
+  assert.doesNotMatch(hookCommand(4747), /src=/);
+  removeHooks(s);
+  assert.deepEqual(s, { description: 'mine', hooks: { Stop: [{ hooks: [theirs] }] } });
+});
+
+test('updateSettings/hooksInstalled per target', async () => {
+  const { hooksInstalled, updateSettings } = await import('../hooks/install.js');
+  const dir = mkdtempSync(join(tmpdir(), 'vao-'));
+  const file = join(dir, 'hooks.json');
+  updateSettings('install', { target: 'codex', file, port: 4747, log: () => {} });
+  assert.equal(hooksInstalled(file, 4747, 'codex'), true);
+  assert.equal(hooksInstalled(file, 4747, 'claude'), false);
+});
+
+test('tool choice: defaults from detection, menu answers, invalid', async () => {
+  const { defaultChoice, parseToolChoice } = await import('../hooks/install.js');
+  assert.equal(defaultChoice({ claude: true, codex: false }), '1');
+  assert.equal(defaultChoice({ claude: false, codex: true }), '2');
+  assert.equal(defaultChoice({ claude: true, codex: true }), '3');
+  assert.equal(defaultChoice({ claude: false, codex: false }), '1');
+  assert.deepEqual(parseToolChoice('', '2'), ['codex']);
+  assert.deepEqual(parseToolChoice('1'), ['claude']);
+  assert.deepEqual(parseToolChoice(' Allebei '), ['claude', 'codex']);
+  assert.deepEqual(parseToolChoice('codex'), ['codex']);
+  assert.equal(parseToolChoice('4'), null);
+});

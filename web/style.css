@@ -156,6 +156,9 @@ button[aria-pressed="true"] { border-color: var(--done); }
 .card .row { display: flex; align-items: center; gap: 6px; }
 .card .name { font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .card.sub .name { font-size: 14px; }
+.src { font-size: 11px; padding: 0 4px; color: #fff; flex: none; }
+.src.claude { background: #d97757; }
+.src.codex { background: #10a37f; }
 .card .status { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .card .task, .card .activity, .card .reason { font-size: 13px; margin-top: 4px; overflow-wrap: anywhere; }
 .card .task { color: var(--muted); }
