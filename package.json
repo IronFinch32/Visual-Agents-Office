@@ -1,0 +1,17 @@
+{
+  "name": "visual-agents-office",
+  "version": "0.1.0",
+  "description": "A pixel-art office that shows your running Claude Code agents and what they are doing.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node --test test/*.test.js",
+    "demo": "node scripts/demo.js",
+    "install-hooks": "node hooks/install.js install",
+    "uninstall-hooks": "node hooks/install.js uninstall"
+  }
+}

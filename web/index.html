@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visual Agents Office</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Visual Agents Office</h1>
+    <div class="counts" id="counts"></div>
+    <div class="actions">
+      <button id="sound" type="button" aria-pressed="false" title="Belletje als een agent op je wacht">🔕 Geluid uit</button>
+      <button id="panelToggle" type="button" title="Lijst tonen/verbergen">☰</button>
+    </div>
+  </header>
+  <div id="offline" class="offline" hidden>Geen verbinding met de server — opnieuw verbinden…</div>
+  <main class="layout">
+    <section class="stage">
+      <canvas id="office" aria-label="Kantoor met agents"></canvas>
+      <p class="empty" id="empty" hidden>Nog geen agents. Start een Claude Code sessie (en installeer de hooks met <code>npm run install-hooks</code>).</p>
+    </section>
+    <aside class="panel" id="panel">
+      <ul id="list" class="list"></ul>
+    </aside>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
