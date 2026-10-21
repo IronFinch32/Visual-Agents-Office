@@ -54,7 +54,7 @@
 - [x] Phase 1: Strategy
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design
-- [ ] Phase 4: Planning
+- [x] Phase 4: Planning
 - [ ] Phase 5: Implementation
 - [ ] Phase 6: Verification
 - [ ] Phase 7: Delivery
