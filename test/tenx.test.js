@@ -54,7 +54,7 @@ test('parsePhase takes the last section that mentions phases', () => {
 `;
   assert.deepEqual(parsePhase(text), { phase: 3, done: [0, 1, 2], complete: false });
   assert.equal(parsePhase('- [ ] Phase 1: Strategy\n').phase, 0);
-  assert.equal(parsePhase('phase: Strategy Complete'), null, 'no phase number → unknown');
+  assert.deepEqual(parsePhase('phase: Strategy Complete'), { phase: 2, done: [1], complete: false }, 'phase names are understood');
   assert.equal(parsePhase('- [x] Phase 6: Delivery Complete').complete, true);
   assert.equal(parsePhase(''), null);
   assert.equal(parsePhase('no phases here'), null);
@@ -214,4 +214,88 @@ test('Classic project stays classic and completes at phase 6', () => {
   const snap = tenx.snapshot()[root];
   assert.equal(snap.flavor, 'classic');
   assert.equal(snap.complete, true);
+});
+
+
+test('phase names: Experience Design is not read as Design', () => {
+  const text = '# Status — x\n- [x] Brainstorming\n- [x] Strategy\n- [x] Experience Design\n- [ ] Design\n';
+  assert.deepEqual(parsePhase(text, 7, 'plus'), { phase: 3, done: [0, 1, 2], complete: false });
+});
+
+test('parseActive validates the plugin contract', async () => {
+  const { parseActive } = await import('../server/tenx.js');
+  const ok = parseActive('{ "role": "ux-designer", "phase": 2, "phaseName": "Experience Design", "feature": "c", "task": "Wireframes", "updatedAt": "2026-10-21T10:00:00Z" }');
+  assert.equal(ok.role, 'ux-designer');
+  assert.equal(ok.phase, 2);
+  assert.equal(ok.at, Date.parse('2026-10-21T10:00:00Z'));
+  assert.equal(parseActive('{ "role": "meeting", "phase": 0 }').role, 'meeting');
+  assert.equal(parseActive('{ "role": "hacker", "phase": 1 }'), null);
+  assert.equal(parseActive('not json'), null);
+  assert.equal(parseActive('{ "role": "sde", "phase": 42 }').phase, null);
+});
+
+test('parseTasks + taskDone read the EM plan', async () => {
+  const { parseTasks, taskDone } = await import('../server/tenx.js');
+  const em = '| # | Task |\n|---|---|\n| T1 | Adapter |\n| T2 | Webhooks |\n- T3: Kortingscodes\n**T4** — UI';
+  assert.deepEqual(parseTasks(em).map((t) => t.id), ['T1', 'T2', 'T3', 'T4']);
+  assert.equal(parseTasks(em)[1].title, 'Webhooks');
+  assert.equal(taskDone('T1', '- [x] T1 adapter', ''), true);
+  assert.equal(taskDone('T2', '- [ ] T2', 'built T1'), false);
+  assert.equal(taskDone('T2', '', 'Built T2 and T1'), true);
+  assert.equal(taskDone('T1', '', 'T10 done'), false, 'word boundary');
+});
+
+test('active.json wins; a new /10x-team prompt shows a meeting until real .10x work starts', () => {
+  const { root, x } = project();
+  writeFileSync(join(x, 'status.md'), [0, 1, 2, 3, 4, 5, 6].map((n) => `- [x] Phase ${n}`).join('\n'));
+  let t = Date.parse('2026-10-21T10:00:00Z');
+  const tenx = createTenx({ fs: nodeFs, now: () => t });
+  tenx.onEvent({ session_id: 's', hook_event_name: 'SessionStart' }, agent(root));
+  assert.equal(tenx.snapshot()[root].complete, true);
+
+  t += 1000;
+  tenx.onEvent({ session_id: 's', hook_event_name: 'UserPromptSubmit', prompt: '/10x-Team-Plus:10x-team nieuw idee' }, agent(root));
+  let snap = tenx.snapshot()[root];
+  assert.equal(snap.phase, 0);
+  assert.equal(snap.complete, false);
+  assert.deepEqual([snap.roles.s.role, snap.roles.s.guessed], ['meeting', false]);
+  tenx.onEvent(pre('AskUserQuestion', {}), agent(root));
+  assert.equal(tenx.snapshot()[root].roles.s.role, 'meeting', 'questions during the new run stay in the meeting');
+
+  t += 1000;
+  tenx.onEvent(pre('Bash', { command: 'echo {...} > .10x/active.json' }), agent(root));
+  writeFileSync(join(x, 'active.json'), JSON.stringify({ role: 'ux-designer', phase: 2, phaseName: 'Experience Design', feature: 'idee', task: 'Flows', updatedAt: new Date(t).toISOString() }));
+  tenx.onEvent({ session_id: 's', hook_event_name: 'PostToolUse', tool_name: 'Bash' }, agent(root));
+  snap = tenx.snapshot()[root];
+  assert.equal(snap.flavor, 'plus');
+  assert.equal(snap.phase, 2);
+  assert.equal(snap.complete, false);
+  assert.deepEqual([snap.roles.s.role, snap.roles.s.guessed, snap.active.task], ['ux-designer', false, 'Flows']);
+
+  t += 7 * 60 * 60 * 1000;
+  tenx.refresh(root);
+  assert.equal(tenx.snapshot()[root].active, null, 'stale after 6 h');
+});
+
+test('workload counts tool calls and resets on phase change; kanban comes from the EM decision', () => {
+  const { root, x } = project();
+  writeFileSync(join(x, 'status.md'), '# Status — f\n- [x] Phase 0\n- [x] Phase 1\n- [x] Phase 2\n- [x] Phase 3\n- [ ] Phase 4\n- [x] T1 adapter');
+  mkdirSync(join(x, 'decisions', 'engineering-manager'), { recursive: true });
+  writeFileSync(join(x, 'decisions', 'engineering-manager', 'f.md'), '| T1 | Adapter |\n| T2 | Webhooks |');
+  const tenx = createTenx({ fs: nodeFs });
+  tenx.onEvent({ session_id: 's', hook_event_name: 'SessionStart' }, agent(root));
+  tenx.onEvent(pre('Edit', { file_path: join(root, 'src', 'a.ts') }), agent(root));
+  tenx.onEvent(pre('Bash', { command: 'npm test' }), agent(root));
+  let snap = tenx.snapshot()[root];
+  assert.equal(snap.workload, 2);
+  assert.deepEqual(snap.kanban.map((k) => [k.id, k.done]), [['T1', true], ['T2', false]]);
+  writeFileSync(join(x, 'status.md'), '# Status — f\n' + [0, 1, 2, 3, 4].map((n) => `- [x] Phase ${n}`).join('\n'));
+  tenx.refresh(root);
+  assert.equal(tenx.snapshot()[root].workload, 0);
+});
+
+test('unknown phase: guess only from the kind of work', () => {
+  assert.equal(guessRole(null, 'Read', { file_path: '/r/README.md' }), 'product-manager');
+  assert.equal(guessRole(null, 'Edit', { file_path: '/r/src/a.ts' }), 'sde');
+  assert.equal(guessRole(null, 'Bash', { command: 'npm test' }), 'qa');
 });

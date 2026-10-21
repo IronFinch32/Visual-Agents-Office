@@ -203,6 +203,7 @@ export function applyEvent(state, evt, now = Date.now()) {
     case 'PostToolUse':
     case 'PostToolUseFailure':
       setStatus(target, 'working', now);
+      if (name === 'PostToolUseFailure') target.failedAt = now; // shown as a puff of smoke
       break;
     case 'PermissionRequest':
       setStatus(target, 'waiting', now);

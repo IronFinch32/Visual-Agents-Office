@@ -28,6 +28,11 @@ export const FLAVORS = {
   plus: { depts: ['meeting', 'strategy', 'design', 'architecture', 'planning', 'engineering', 'quality', 'operations'], implPhase: 5 },
 };
 export const lastPhase = (flavor) => FLAVORS[flavor].depts.length - 1;
+export const PHASE_NAMES = {
+  classic: ['Brainstorming', 'Strategy', 'Design', 'Planning', 'Implementation', 'Verification', 'Delivery'],
+  plus: ['Brainstorming', 'Strategy', 'Experience Design', 'Design', 'Planning', 'Implementation', 'Verification', 'Delivery'],
+};
+const ACTIVE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 // Kept for compatibility with ADR-006 callers.
 export const PHASE_DEPT = FLAVORS.classic.depts;
 
@@ -91,11 +96,17 @@ function toolPath(input) {
 /** Best guess when no exact signal: what does this kind of work look like in this phase's department? */
 export function guessRole(phase, toolName, toolInput = {}, flavor = 'classic') {
   const depts = FLAVORS[flavor].depts;
-  const dept = Number.isInteger(phase) ? depts[Math.min(phase, depts.length - 1)] : 'engineering';
   const path = norm(toolPath(toolInput));
   const cmd = String(toolInput?.command || '');
   const isTest = /\b(test|spec|jest|vitest|pytest|playwright)\b/i.test(cmd) || /(\.|_)(test|spec)\./i.test(path);
   if (/\.(sql)$|migrat|schema/i.test(path) || /\b(psql|mysql|prisma migrate|alembic)\b/.test(cmd)) return 'dba';
+  if (!Number.isInteger(phase)) {
+    // No phase known: only the kind of work says something.
+    if (isTest && toolName === 'Bash') return 'qa';
+    if (isCodeFile(path) && ['Write', 'Edit', 'MultiEdit', 'apply_patch', 'NotebookEdit'].includes(toolName)) return 'sde';
+    return 'product-manager';
+  }
+  const dept = depts[Math.min(phase, depts.length - 1)];
   switch (dept) {
     case 'meeting': return MEETING;
     case 'strategy': return 'product-manager';
@@ -112,15 +123,30 @@ export function guessRole(phase, toolName, toolInput = {}, flavor = 'classic') {
  * Phase from a free-form status.md: use the last section that mentions phases, take the
  * highest "Phase N" marked done ([x] or "complete") and return the next one (max 6).
  */
-export function parsePhase(text, maxPhase = 6) {
+function phaseFromName(line, flavor) {
+  const names = PHASE_NAMES[flavor] || PHASE_NAMES.classic;
+  // Longest names first, so "Experience Design" isn't read as "Design".
+  const order = names.map((n, i) => [n, i]).sort((a, b) => b[0].length - a[0].length);
+  for (const [name, i] of order) if (new RegExp(`\\b${name}\\b`, 'i').test(line)) return i;
+  return null;
+}
+
+export function parsePhase(text, maxPhase = 6, flavor = maxPhase === 7 ? 'plus' : 'classic') {
   if (!text) return null;
   const sections = String(text).split(/^(?=#\s)/m).reverse();
   for (const section of sections) {
-    const lines = section.split('\n').filter((l) => /phase\s*\d/i.test(l));
+    const all = section.split('\n');
+    let lines = all.filter((l) => /phase\s*\d/i.test(l)).map((l) => [Number(/phase\s*(\d)/i.exec(l)[1]), l]);
+    // Legacy layouts: "- [x] Strategy" or "phase: Strategy Complete".
+    if (!lines.length) {
+      lines = all
+        .filter((l) => /\[[x ]\]|\bcomplete\b/i.test(l))
+        .map((l) => [phaseFromName(l, flavor), l])
+        .filter(([n]) => n !== null);
+    }
     if (!lines.length) continue;
     const done = [];
-    for (const line of lines) {
-      const n = Number(/phase\s*(\d)/i.exec(line)[1]);
+    for (const [n, line] of lines) {
       if (/\[x\]|complete/i.test(line) && !/\[ \]/.test(line)) done.push(n);
     }
     const highest = done.length ? Math.max(...done) : -1;
@@ -133,6 +159,46 @@ export function reviewVerdict(text) {
   return /afgekeurd|rejected|blocker|\bfail(ed)?\b|not approved|niet goedgekeurd/i.test(text || '') ? 'rejected' : 'approved';
 }
 
+/** Parse .10x/active.json (10x-Team-Plus ≥ 0.4.0-plus.2). Invalid → null. */
+export function parseActive(text) {
+  let a;
+  try { a = JSON.parse(text); } catch { return null; }
+  if (!a || typeof a !== 'object') return null;
+  const role = String(a.role || '');
+  if (role !== MEETING && !ROLE_IDS.has(role)) return null;
+  const phase = Number.isInteger(a.phase) && a.phase >= 0 && a.phase <= 7 ? a.phase : null;
+  const at = Date.parse(a.updatedAt);
+  return {
+    role,
+    phase,
+    phaseName: String(a.phaseName || '').slice(0, 40),
+    feature: String(a.feature || '').slice(0, 60),
+    task: String(a.task || '').slice(0, 100),
+    at: Number.isFinite(at) ? at : null,
+  };
+}
+
+/** Tasks "T1 …" from an engineering-manager decision (table rows or list items). */
+export function parseTasks(text) {
+  const tasks = [];
+  const seen = new Set();
+  for (const line of String(text || '').split('\n')) {
+    const m = /^\s*\|\s*(T\d+)\s*\|\s*([^|]+?)\s*\|/.exec(line) || /^\s*(?:[-*]|\d+\.)?\s*\**(T\d+)\**[\s:.)—–-]+(.+?)\s*$/.exec(line);
+    if (!m || seen.has(m[1])) continue;
+    seen.add(m[1]);
+    tasks.push({ id: m[1], title: m[2].replace(/[*`]/g, '').slice(0, 40) });
+    if (tasks.length >= 12) break;
+  }
+  return tasks;
+}
+
+/** A task is done when a ticked line in status.md or the SDE decision mentions its id. */
+export function taskDone(id, statusSection, sdeText) {
+  const re = new RegExp(`\\b${id}\\b`);
+  const ticked = String(statusSection || '').split('\n').some((l) => /\[x\]/i.test(l) && re.test(l));
+  return ticked || re.test(String(sdeText || ''));
+}
+
 /**
  * Per-project 10x state. `fs` is injected: { exists(p), readText(p), list(dir) → [{ name, mtimeMs }] }.
  */
@@ -142,7 +208,11 @@ export function createTenx({ fs, now = () => Date.now() }) {
   function project(key) {
     let p = projects.get(key);
     if (!p) {
-      p = { key, enabled: false, flavor: 'classic', phase: null, done: [], complete: false, adrs: [], reviews: {}, gate: null, handoffAt: 0, roles: new Map(), lastRefresh: 0 };
+      p = {
+        key, enabled: false, flavor: 'classic', phase: null, done: [], complete: false, adrs: [], reviews: {}, gate: null,
+        handoffAt: 0, roles: new Map(), lastRefresh: 0, active: null, activeOwner: null, lastSession: null, newRun: null,
+        workload: 0, workPhase: null, kanban: [],
+      };
       projects.set(key, p);
     }
     return p;
@@ -157,7 +227,7 @@ export function createTenx({ fs, now = () => Date.now() }) {
     if (!p.enabled) return;
     const statusText = fs.readText(join(dir, 'status.md'));
     if (isPlusSignal({ statusText }) || fs.exists(join(dir, 'decisions', 'ux-designer')) || fs.exists(join(dir, 'decisions', 'ui-designer'))) p.flavor = 'plus';
-    const status = parsePhase(statusText, lastPhase(p.flavor));
+    const status = parsePhase(statusText, lastPhase(p.flavor), p.flavor);
     if (status) Object.assign(p, status);
     p.adrs = fs.list(join(dir, 'adrs'))
       .filter((f) => f.name.endsWith('.md'))
@@ -172,6 +242,34 @@ export function createTenx({ fs, now = () => Date.now() }) {
       if (kind) reviews[kind] = reviewVerdict(fs.readText(join(dir, 'reviews', f.name)));
     }
     p.reviews = reviews;
+
+    // The plugin's own record of who is working (ADR-008).
+    const activeFile = fs.list(dir).find((f) => f.name === 'active.json');
+    const active = activeFile ? parseActive(fs.readText(join(dir, 'active.json'))) : null;
+    if (active) active.at = active.at ?? activeFile.mtimeMs;
+    p.active = active && now() - active.at < ACTIVE_MAX_AGE_MS ? active : null;
+    if (p.active && (p.active.phase === 7 || /^u[xi]-designer$/.test(p.active.role) || /experience design/i.test(p.active.phaseName))) p.flavor = 'plus';
+
+    // Kanban: tasks from the newest engineering-manager decision.
+    const newest = (role) => fs.list(join(dir, 'decisions', role))
+      .filter((f) => f.name.endsWith('.md') && f.name !== '_index.md')
+      .sort((a, b) => b.mtimeMs - a.mtimeMs)[0];
+    const em = newest('engineering-manager');
+    const sde = newest('sde');
+    const sdeText = sde ? fs.readText(join(dir, 'decisions', 'sde', sde.name)) : '';
+    const lastSection = String(statusText || '').split(/^(?=#\s)/m).pop();
+    p.kanban = em ? parseTasks(fs.readText(join(dir, 'decisions', 'engineering-manager', em.name)))
+      .map((t) => ({ ...t, done: taskDone(t.id, lastSection, sdeText) })) : [];
+
+    const phase = effectivePhase(p);
+    if (phase !== p.workPhase) { p.workPhase = phase; p.workload = 0; }
+  }
+
+  /** Phase to show: a fresh /10x-team prompt (phase 0) beats active.json, which beats status.md. */
+  function effectivePhase(p) {
+    if (p.newRun && !(p.active?.at >= p.newRun.at)) return 0;
+    if (p.active && p.active.phase !== null) return Math.min(p.active.phase, lastPhase(p.flavor));
+    return p.phase;
   }
 
   /** Feed a hook event (after the agent state was updated). Returns true when 10x state changed. */
@@ -180,7 +278,14 @@ export function createTenx({ fs, now = () => Date.now() }) {
     const p = project(agent.projectKey);
     const t = now();
     let exact = null;
-    if (evt.hook_event_name === 'UserPromptSubmit' && /10x-team/i.test(evt.prompt || '')) p.enabled = true;
+    if (!evt.agent_id) p.lastSession = agent.sessionId;
+    if (evt.hook_event_name === 'UserPromptSubmit' && /10x-team/i.test(evt.prompt || '')) {
+      // A new /10x-team run starts with a brainstorm, whatever status.md says about earlier features.
+      p.enabled = true;
+      p.newRun = { session: agent.sessionId, at: t };
+      p.workload = 0;
+      return true;
+    }
     if (evt.hook_event_name === 'PreToolUse') {
       const input = evt.tool_input || {};
       if (evt.tool_name === 'Skill') {
@@ -189,24 +294,29 @@ export function createTenx({ fs, now = () => Date.now() }) {
         if (isPlusSignal({ skill: input.skill })) p.flavor = 'plus';
       }
       const path = toolPath(input);
+      const cmd = evt.tool_name === 'Bash' ? String(input.command || '') : '';
       if (!exact && path) exact = roleFromPath(path);
       if (isPlusSignal({ path })) p.flavor = 'plus';
-      if (path && isTenxPath(path)) {
+      const touchesActive = /\/\.10x\/active\.json$/.test(norm(path)) || /\.10x\/active\.json/.test(cmd);
+      if (touchesActive) p.activeOwner = agent.sessionId;
+      if ((path && isTenxPath(path)) || /\.10x\//.test(cmd)) {
         p.enabled = true;
         if (/\/\.10x\/handoff\.md$/.test(norm(path))) p.handoffAt = t;
+        if (!touchesActive) p.newRun = null; // real 10x work has started; follow the files again
         p.dirty = true; // re-read after the write lands (PostToolUse)
       }
       if (!p.lastRefresh) refresh(p.key);
       if (!p.enabled) return false;
       if (path && isCodeFile(path) && ['Write', 'Edit', 'MultiEdit', 'apply_patch', 'NotebookEdit'].includes(evt.tool_name)) {
         if (!p.adrs.length) p.gate = { at: t, reason: 'Code geschreven terwijl er nog geen ADR is' };
-        else if (p.phase !== null && p.phase < FLAVORS[p.flavor].implPhase && !p.complete) p.gate = { at: t, reason: `Code geschreven in fase ${p.phase}, vóór de implementatiefase` };
+        else if (effectivePhase(p) !== null && effectivePhase(p) < FLAVORS[p.flavor].implPhase && !p.complete) p.gate = { at: t, reason: `Code geschreven in fase ${p.phase}, vóór de implementatiefase` };
       }
       // Subagents work on the shared floor; only the session itself plays a team role.
       // Bookkeeping in .10x (status.md, handoff.md) doesn't say who is working: keep the current role.
-      const bookkeeping = path && isTenxPath(path) && !exact;
+      const bookkeeping = (path && isTenxPath(path) && !exact) || touchesActive;
+      if (!bookkeeping) p.workload++;
       if (!evt.agent_id && !bookkeeping) {
-        const role = exact || guessRole(p.phase, evt.tool_name, input, p.flavor);
+        const role = exact || guessRole(effectivePhase(p), evt.tool_name, input, p.flavor);
         p.roles.set(agent.sessionId, { role, guessed: !exact, at: t });
       }
       return true;
@@ -235,16 +345,25 @@ export function createTenx({ fs, now = () => Date.now() }) {
     const out = {};
     for (const p of projects.values()) {
       if (!p.enabled || (activeKeys && !activeKeys.has(p.key))) continue;
+      const roles = Object.fromEntries(p.roles);
+      const owner = p.activeOwner && p.roles.has(p.activeOwner) ? p.activeOwner : p.lastSession;
+      const fromActive = p.active && !(p.newRun && p.active.at < p.newRun.at);
+      if (fromActive && owner) roles[owner] = { role: p.active.role, guessed: false, at: p.active.at, source: 'active.json' };
+      if (p.newRun && !fromActive) roles[p.newRun.session] = { role: MEETING, guessed: false, at: p.newRun.at };
+      const phase = effectivePhase(p);
       out[p.key] = {
         flavor: p.flavor,
-        phase: p.phase,
-        done: p.done,
-        complete: p.complete,
+        phase,
+        done: p.newRun && !fromActive ? [] : p.done,
+        complete: p.complete && !(p.newRun && !fromActive) && !(fromActive && p.active.phase !== null && p.active.phase < lastPhase(p.flavor)),
+        active: fromActive ? { feature: p.active.feature, task: p.active.task, phaseName: p.active.phaseName } : null,
+        workload: p.workload,
+        kanban: p.kanban,
         adrs: p.adrs.map(({ number, title, mtimeMs }) => ({ number, title, mtimeMs })),
         reviews: p.reviews,
         gate: p.gate,
         handoffAt: p.handoffAt,
-        roles: Object.fromEntries(p.roles),
+        roles,
       };
     }
     return out;

@@ -197,3 +197,10 @@ test('source: sessions keep their tool, subagents inherit it; Interrupt and Code
   applyEvent(st, ev('SessionStart', { session_id: 'c2' }), 6);
   assert.equal(get(st, 'c2').source, 'claude');
 });
+
+test('PostToolUseFailure records failedAt', () => {
+  const st = createState();
+  applyEvent(st, ev('PostToolUseFailure', { tool_name: 'Bash' }), 42);
+  assert.equal(get(st).failedAt, 42);
+  assert.equal(get(st).status, 'working');
+});
