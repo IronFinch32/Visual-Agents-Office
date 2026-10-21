@@ -1,4 +1,6 @@
 # Handoff — one-company
 
-**Van:** EM/Senior → **Naar:** SDE
-Taken T1–T6 in `decisions/engineering-manager/one-company.md`, aanpak in `decisions/senior-engineer/one-company.md`. ADR-016.
+**Van:** SDE → **Naar:** QA / Security / Design review
+- Gebouwd: zie `decisions/sde/one-company.md`. Commit 7237500.
+- Testen: `npm test`; browser met `office-dev` (:4848) + `VAO_DEMO_10X=ceo npm run demo` en `npm run demo` op `VAO_PORT=4848`. Controleer: overdracht, collega (SDE 2), vergadertafel, flex, wachten, SHIPPED, highlight, `?weergave=kamers`, extra afdeling.
+- Security: `departments.json` is externe input (lokaal bestand) → sanering.

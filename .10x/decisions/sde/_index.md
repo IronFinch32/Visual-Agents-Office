@@ -17,3 +17,4 @@
 - [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)
 - [lounge-pool](lounge-pool.md) — pooltafel gebouwd (259b02f)
 - [session-sync](session-sync.md) — eigenaar/stand per sessie + plugin-hook
+- [one-company](one-company.md) — company.js, company-model.js, departments.js

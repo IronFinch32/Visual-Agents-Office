@@ -253,16 +253,17 @@
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
+- [x] Phase 5: Implementation
 - [ ] Phase 6: Verification
 - [ ] Phase 7: Delivery
 
 ## Progress
 - Idee van de CEO: één bedrijf met afdelingen in plaats van een heel bedrijf per sessie; sessies lopen van afdeling naar afdeling.
 - Gebruiker koos: vaste medewerkers + projectmappen, Flexwerkplek voor gewone sessies. Spec `specs/2026-10-21-one-company-design.md` goedgekeurd.
-- [ ] T1 departments.js + snapshot
-- [ ] T2 company-model.js + tests
-- [ ] T3 company.js tekenen
-- [ ] T4 company.js gedrag
-- [ ] T5 building/ceo-floor/app
-- [ ] T6 demo, README, tests, browsercheck
+- [x] T1 departments.js + snapshot
+- [x] T2 company-model.js + tests
+- [x] T3 company.js tekenen
+- [x] T4 company.js gedrag
+- [x] T5 building/ceo-floor/app
+- [x] T6 demo, README, tests, browsercheck
+- Code: 7237500 · tests 102/102
