@@ -5,3 +5,4 @@
 - [project-offices](project-offices.md)
 - [office-polish](office-polish.md)
 - [autostart](autostart.md)
+- [living-office](living-office.md)

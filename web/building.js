@@ -173,12 +173,18 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
   }
 
   function tick(nowMs) {
+    requestAnimationFrame(tick); // schedule first: one failing room must not stop the whole building
     const dt = Math.min(0.1, (nowMs - last) / 1000);
     last = nowMs;
     const t = nowMs / 1000;
     let removed = false;
     for (const [key, r] of rooms) {
-      r.room.frame(t, dt);
+      try {
+        r.room.frame(t, dt);
+      } catch (err) {
+        if (!r.failed) console.error(`Kantoor ${key} kon niet tekenen`, err);
+        r.failed = true;
+      }
       if (!present.has(key) && r.room.isEmpty()) {
         r.el.remove();
         rooms.delete(key);
@@ -189,7 +195,6 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
     if (removed) {
       if (focusKey && !rooms.has(focusKey)) focus(null); else layout();
     }
-    requestAnimationFrame(tick);
   }
 
   new ResizeObserver(() => layout()).observe(container);
@@ -197,5 +202,6 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
   backButton?.addEventListener('click', () => focus(null));
   requestAnimationFrame(tick);
 
+  if (/[?&]debug\b/.test(location.search)) window.__vaoRooms = rooms; // inspect from the console
   return { setAgents, focus, roomCount: () => rooms.size };
 }

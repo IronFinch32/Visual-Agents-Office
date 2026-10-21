@@ -9,3 +9,4 @@
 - [codex-support](codex-support.md)
 - [tenx-mode](tenx-mode.md)
 - [tenx-plus](tenx-plus.md)
+- [living-office](living-office.md)

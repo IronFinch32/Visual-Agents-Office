@@ -22,7 +22,14 @@ Gebruik je de [10x-team plugin](https://github.com/Jaan-Mustafa/10x-Team), dan k
 - **Poortwachter**: wordt er code geschreven terwijl er nog geen ADR is, of vóór fase 4, dan gaat er een rode zwaailamp aan en verschijnt er een waarschuwing in de zijbalk.
 - **Stempels**: na een QA- of security-review in `.10x/reviews/` komt er een groene stempel (✓) of een rode (✗ bij afgekeurd, blocker of fail).
 - **Klik op een teamlid** om het begin van zijn nieuwste beslissing in de zijbalk te lezen.
-- Echte subagents (Explore e.d.) werken op de **werkvloer** onder de afdelingen.
+- **Directiekamer: jij bent de CEO.** Stuur je een prompt, dan loopt de CEO naar de vergaderzaal voor een korte stand-up met je opdracht in een ballon. Wacht iemand op jou, dan loopt die naar je deur en wacht daar met zijn vraag; meerdere wachtenden vormen een rij, en het postbakje op je bureau telt mee.
+- **Echte overdracht**: rondt een fase af, dan brengt de vorige rol een map naar het bureau van de volgende ("Overdracht: …" / "Ik pak het op!") en gaat daarna koffie halen.
+- **Leven in de lounge**: wie niet aan de beurt is, haalt af en toe koffie en kletst even; rollen van afgeronde fases vaker.
+- **Flexplekken**: subagents (Explore e.d.) zitten op een krukje naast het bureau van de rol die ze aanstuurt; klaar, dan naar de lounge.
+- **Looproutes**: iedereen loopt om bureaus, tafels en de bank heen.
+- **Details**: een gedachtewolk bij "denkt na", een rookwolkje als een tool mislukt, een papierstapel die groeit met het werk in de fase, een **kanbanbord** met de taken (T1, T2, …) uit de EM-planning, een **"SHIPPED!"-feest** bij oplevering, en na 10 minuten stilte gaat het team naar huis (lichten uit).
+
+**Wie werkt er echt?** Vanaf 10x-Team-Plus `0.4.0-plus.2` houdt de plugin zelf bij welke rol actief is, in `.10x/active.json` (`role`, `phase`, `phaseName`, `feature`, `task`, `updatedAt`). Het kantoor geeft dat bestand voorrang en hoeft dan niet meer te gokken: geen `~` op het naambordje, en de taak staat op het whiteboard. Zonder dat bestand valt het terug op skill-aanroepen, schrijfacties in `.10x/` en de fase uit `status.md` (ook fasenamen als "Strategy Complete" worden herkend). Een nieuwe `/10x-team`-prompt zet het kantoor altijd op fase 0 in de vergaderzaal, tot er echt 10x-werk begint.
 
 **10x-Team-Plus** (met UX en UI Designer) wordt automatisch herkend: aan `10x-Team-Plus:`-skills, aan de mappen `.10x/decisions/ux-designer/` of `ui-designer/`, of aan "Phase 7" in `status.md`. Zo'n kantoor krijgt een extra afdeling **Design** (UX met schetsboek, UI met kleurenpalet), een tijdlijn van 0 tot en met 7 en een poortwachter die let op code vóór fase 5 (implementatie). Projecten met de originele 10x-Team blijven de indeling met 0–6 houden. Het kopje toont `10x` of `10x+`.
 

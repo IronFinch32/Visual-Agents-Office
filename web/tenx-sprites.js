@@ -28,6 +28,7 @@ export const DEPTS = {
   quality: { label: 'Kwaliteit', rug: '#7a6a3f', roles: ['qa', 'security'] },
   operations: { label: 'Operations', rug: '#7a4d3f', roles: ['devops', 'sre'] },
   lounge: { label: 'Lounge', rug: '#3f6f73', roles: [] },
+  ceo: { label: 'Directie', rug: '#6a5440', roles: [] },
 };
 
 // Per plugin flavor (ADR-007): department and default role per phase.
@@ -211,4 +212,130 @@ export function drawEaselText(ctx, x, y, w, h, text) {
   ctx.textBaseline = 'top';
   ctx.fillStyle = '#1f3a8a';
   wrap(ctx, text, w - 6, Math.floor((h - 3) / 6)).forEach((l, i) => ctx.fillText(fit(ctx, l, w - 6), x + 3, y + 2 + i * 6));
+}
+
+// ---------- living office (ADR-008) ----------
+
+export function drawCeoDesk(ctx, x, y, w) {
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(x + w / 2, y + 17, w / 2 + 3, 3, 0, 0, Math.PI * 2); ctx.fill();
+  rect(ctx, x, y, w, 5, '#5a3a22');
+  rect(ctx, x, y, w, 1, '#7a5232');
+  rect(ctx, x, y + 5, w, 10, '#3e2716');
+  rect(ctx, x + 4, y + 8, w - 8, 1, '#c99a3a');
+  rect(ctx, x + 2, y + 15, 3, 2, '#2a1a0e');
+  rect(ctx, x + w - 5, y + 15, 3, 2, '#2a1a0e');
+}
+
+export function drawInbox(ctx, x, y, count, t) {
+  rect(ctx, x, y, 9, 4, '#9aa0b8');
+  rect(ctx, x + 1, y + 1, 7, 2, '#f7f7fb');
+  if (!count) return;
+  const on = Math.sin(t * 6) > -0.3;
+  rect(ctx, x + 6, y - 6, 7, 7, on ? '#ff4d5e' : '#b8323f');
+  ctx.font = `600 5px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(String(Math.min(9, count)), x + 9.5, y - 2.5);
+  ctx.textAlign = 'left';
+}
+
+export function drawSofa(ctx, x, y, w) {
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(x + w / 2, y + 12, w / 2, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+  rect(ctx, x, y, w, 6, '#8a4a5e');
+  rect(ctx, x, y + 6, w, 5, '#6e3a4b');
+  rect(ctx, x - 2, y + 2, 3, 9, '#6e3a4b');
+  rect(ctx, x + w - 1, y + 2, 3, 9, '#6e3a4b');
+  rect(ctx, x + 2, y + 1, w - 4, 1, '#a45d73');
+}
+
+export function drawMiniDesk(ctx, x, y) {
+  ctx.fillStyle = 'rgba(0,0,0,.2)';
+  ctx.beginPath(); ctx.ellipse(x + 8, y + 9, 9, 2, 0, 0, Math.PI * 2); ctx.fill();
+  rect(ctx, x, y, 16, 3, C.deskTop);
+  rect(ctx, x + 1, y + 3, 14, 4, C.deskFront);
+  rect(ctx, x + 4, y - 4, 8, 4, '#30344a'); // laptop lid
+  rect(ctx, x + 5, y - 3, 6, 2, '#4ea3ff');
+}
+
+export function drawPaperStack(ctx, x, y, sheets) {
+  for (let i = 0; i < sheets; i++) {
+    rect(ctx, x + (i % 2), y - i * 1.5, 7, 2, i % 2 ? '#f4f4f4' : '#e6e6ee');
+  }
+}
+
+export function drawThought(ctx, cx, bottomY, t) {
+  const x = Math.round(cx), y = Math.round(bottomY);
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = C.trim;
+  ctx.lineWidth = 1;
+  const blob = (bx, by, r) => { ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); };
+  blob(x - 2, y - 2, 1.2);
+  blob(x + 1, y - 5, 1.8);
+  ctx.beginPath(); ctx.ellipse(x + 7, y - 12, 9, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  for (let i = 0; i < 3; i++) {
+    if (Math.floor(t * 3) % 4 > i) rect(ctx, x + 3 + i * 3, y - 12, 2, 2, C.bubbleText);
+  }
+}
+
+export function drawSmoke(ctx, x, y, age) {
+  const k = Math.min(1, age / 4);
+  ctx.globalAlpha = 0.7 * (1 - k);
+  ctx.fillStyle = '#5b6078';
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.arc(x + Math.sin(i * 2 + age * 3) * 3, y - age * 4 - i * 3, 2.5 + i * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  if (age < 2.5) {
+    ctx.font = `600 5px ${FONT}`;
+    ctx.fillStyle = '#ff4d5e';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('#!?', x + 4, y - 4);
+  }
+}
+
+export function drawKanban(ctx, x, y, w, h, tasks, implActive) {
+  rect(ctx, x - 1, y - 1, w + 2, h + 2, '#6b4a2e');
+  rect(ctx, x, y, w, h, '#c9b48a');
+  const colW = Math.floor(w / 3);
+  const cols = [[], [], []];
+  const firstOpen = tasks.findIndex((tk) => !tk.done);
+  tasks.forEach((tk, i) => cols[tk.done ? 2 : i === firstOpen && implActive ? 1 : 0].push(tk));
+  ctx.font = `600 4px ${FONT}`;
+  ctx.textBaseline = 'top';
+  ['TE DOEN', 'BEZIG', 'KLAAR'].forEach((label, c) => {
+    ctx.fillStyle = '#4a3420';
+    ctx.fillText(label, x + c * colW + 2, y + 1);
+    if (c) rect(ctx, x + c * colW, y + 1, 1, h - 2, '#a8946a');
+    cols[c].slice(0, 5).forEach((tk, i) => {
+      const cx = x + c * colW + 2;
+      const cy = y + 7 + i * 6;
+      rect(ctx, cx, cy, colW - 4, 5, c === 2 ? '#bfe8c9' : c === 1 ? '#bfdcf7' : '#fff6c8');
+      ctx.font = `4px ${FONT}`;
+      ctx.fillStyle = '#2a1b10';
+      ctx.fillText(tk.id, cx + 1, cy + 0.5);
+    });
+    if (cols[c].length > 5) { ctx.fillStyle = '#4a3420'; ctx.fillText(`+${cols[c].length - 5}`, x + c * colW + 2, y + h - 6); }
+  });
+  if (!tasks.length) {
+    ctx.font = `4px ${FONT}`;
+    ctx.fillStyle = '#6b5a3a';
+    ctx.fillText('nog geen planning', x + 4, y + h / 2);
+  }
+}
+
+export function drawBanner(ctx, cx, y, text, t) {
+  ctx.font = `600 9px ${FONT}`;
+  const w = Math.ceil(ctx.measureText(text).width) + 14;
+  const x = Math.round(cx - w / 2);
+  const wave = Math.round(Math.sin(t * 3) * 1);
+  rect(ctx, x, y + wave, w, 13, '#f1c40f');
+  rect(ctx, x + 2, y + 2 + wave, w - 4, 9, '#d94a5e');
+  ctx.fillStyle = '#ffffff';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + 7, y + 7 + wave);
 }

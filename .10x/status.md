@@ -55,9 +55,9 @@
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
+- [x] Phase 5: Implementation
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
 
 ## Progress
 - Approved in chat: active.json reader + phase fix, step 1 (CEO office, flex desks, pathfinding, handoff, stand-up, lounge life), step 2 (party, failures, thinking, workload, kanban, end of day).

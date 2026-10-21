@@ -6,3 +6,4 @@
 - [office-polish](office-polish.md)
 - [distribution](distribution.md)
 - [autostart](autostart.md)
+- [living-office](living-office.md)
