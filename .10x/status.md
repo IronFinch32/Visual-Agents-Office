@@ -250,7 +250,7 @@
 
 - [x] Phase 0: Brainstorming
 - [x] Phase 1: Strategy
-- [ ] Phase 2: Experience Design
+- [x] Phase 2: Experience Design
 - [ ] Phase 3: Design
 - [ ] Phase 4: Planning
 - [ ] Phase 5: Implementation

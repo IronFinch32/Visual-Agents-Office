@@ -9,3 +9,4 @@
 - [no-directie](no-directie.md)
 - [lounge-pool](lounge-pool.md) — pooltafel-sprite in bestaande pixel-stijl
 - [session-sync](session-sync.md) — geen visuele wijziging
+- [one-company](one-company.md) — projectkleuren, map/naambordje, highlight
