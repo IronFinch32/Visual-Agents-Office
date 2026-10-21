@@ -14,8 +14,12 @@ export const FLEX_PER_SPAN = 4;
 export const PROJECT_COLORS = ['#4ea3ff', '#f1c40f', '#3ddc84', '#e87fb0', '#ff8c42', '#a78bfa', '#2dd4bf', '#ff5c7a'];
 
 // The built-in company when the plugin's departments.json can't be read (10x-Team-Plus layout).
-export const BUILTIN_DEPARTMENTS = ['meeting', 'strategy', 'design', 'architecture', 'planning', 'engineering', 'quality', 'operations']
-  .map((id, i) => ({ id, name: DEPTS[id].label, phases: [i], roles: DEPTS[id].roles.map((role) => ({ role, title: ROLE_INFO[role].label })) }));
+const BUILTIN_PHASES = {
+  meeting: [0], strategy: [1], design: [2], architecture: [3], planning: [4], engineering: [5], quality: [6], operations: [7],
+  marketing: [8], sales: [1, 8], 'customer-success': [8], 'legal-finance': [1, 8],
+};
+export const BUILTIN_DEPARTMENTS = Object.entries(BUILTIN_PHASES)
+  .map(([id, phases]) => ({ id, name: DEPTS[id].label, phases, roles: DEPTS[id].roles.map((role) => ({ role, title: ROLE_INFO[role].label })) }));
 
 const LABELS = { other: 'Overig', flex: 'Flexwerkplek', lounge: 'Lounge' };
 

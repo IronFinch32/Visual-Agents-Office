@@ -18,19 +18,26 @@ export const ROLES = [
   { id: 'security', label: 'Security', skill: 'security-engineer', dept: 'quality' },
   { id: 'devops', label: 'DevOps', skill: 'devops-engineer', dept: 'operations' },
   { id: 'sre', label: 'SRE', skill: 'sre', dept: 'operations' },
+  // 10x-Team-Plus 0.5: go-to-market (ADR-018)
+  { id: 'product-marketing-manager', label: 'PMM', skill: 'product-marketing-manager', dept: 'marketing' },
+  { id: 'sales-lead', label: 'Sales', skill: 'sales-lead', dept: 'sales' },
+  { id: 'customer-success-manager', label: 'CS', skill: 'customer-success-manager', dept: 'customer-success' },
+  { id: 'legal-counsel', label: 'Legal', skill: 'legal-counsel', dept: 'legal-finance' },
+  { id: 'cfo', label: 'CFO', skill: 'cfo', dept: 'legal-finance' },
 ];
 export const ROLE_IDS = new Set(ROLES.map((r) => r.id));
 export const MEETING = 'meeting';
 
-// Department per phase; phase 0 is the brainstorm meeting. 10x-Team-Plus adds Experience Design.
+// Department per phase; phase 0 is the brainstorm meeting. 10x-Team-Plus adds Experience Design and,
+// since 0.5, Launch (ADR-018). Launch is optional: status.md sections written before it end at Delivery.
 export const FLAVORS = {
   classic: { depts: ['meeting', 'strategy', 'architecture', 'planning', 'engineering', 'quality', 'operations'], implPhase: 4 },
-  plus: { depts: ['meeting', 'strategy', 'design', 'architecture', 'planning', 'engineering', 'quality', 'operations'], implPhase: 5 },
+  plus: { depts: ['meeting', 'strategy', 'design', 'architecture', 'planning', 'engineering', 'quality', 'operations', 'marketing'], implPhase: 5, optionalLast: true },
 };
 export const lastPhase = (flavor) => FLAVORS[flavor].depts.length - 1;
 export const PHASE_NAMES = {
   classic: ['Brainstorming', 'Strategy', 'Design', 'Planning', 'Implementation', 'Verification', 'Delivery'],
-  plus: ['Brainstorming', 'Strategy', 'Experience Design', 'Design', 'Planning', 'Implementation', 'Verification', 'Delivery'],
+  plus: ['Brainstorming', 'Strategy', 'Experience Design', 'Design', 'Planning', 'Implementation', 'Verification', 'Delivery', 'Launch'],
 };
 const ACTIVE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 // Kept for compatibility with ADR-006 callers.
@@ -44,8 +51,9 @@ export const isCeoPrompt = (prompt) => /^\s*\/10x-team-plus:ceo\b/i.test(String(
 /** Signals that a project uses 10x-Team-Plus. */
 export function isPlusSignal({ skill, path, statusText } = {}) {
   if (skill && /^10x-team-plus:/i.test(skill) && !isCeoSkill(skill)) return true;
-  if (path && /\/\.10x\/decisions\/(ux|ui)-designer\//.test(norm(path))) return true;
-  if (statusText && /phase\s*7|experience design/i.test(statusText)) return true;
+  const m = path && /\/\.10x\/decisions\/([^/]+)\//.exec(norm(path));
+  if (m && PLUS_ONLY_ROLES.test(m[1])) return true;
+  if (statusText && /phase\s*[78]|experience design/i.test(statusText)) return true;
   return false;
 }
 
@@ -62,6 +70,7 @@ export function roleFromSkill(skill) {
 }
 
 const norm = (p) => String(p || '').replace(/\\/g, '/');
+const PLUS_ONLY_ROLES = /^(ux-designer|ui-designer|product-marketing-manager|sales-lead|customer-success-manager|legal-counsel|cfo)$/;
 
 /** Writes inside .10x/ tell exactly which role is working. */
 export function roleFromPath(path) {
@@ -73,7 +82,9 @@ export function roleFromPath(path) {
   if (m) return ROLE_IDS.has(m[1]) ? m[1] : null;
   if (rest.startsWith('adrs/')) return 'architect';
   if (rest.startsWith('specs/')) return MEETING;
+  if (rest.startsWith('launch/')) return 'product-marketing-manager';
   if (rest.startsWith('reviews/')) {
+    if (/launch/i.test(rest)) return 'product-marketing-manager';
     if (/secur/i.test(rest)) return 'security';
     if (/qa/i.test(rest)) return 'qa';
   }
@@ -127,6 +138,11 @@ export function guessRole(phase, toolName, toolInput = {}, flavor = 'classic') {
     case 'planning': return 'engineering-manager';
     case 'engineering': return isTest && toolName === 'Bash' ? 'qa' : 'sde';
     case 'quality': return /secur|audit|auth/i.test(path + cmd) ? 'security' : 'qa';
+    case 'marketing':
+      if (/pric|prijs|sales|outreach|pitch/i.test(path)) return 'sales-lead';
+      if (/faq|onboard|support|help/i.test(path)) return 'customer-success-manager';
+      if (/privacy|terms|voorwaarden|legal|cookie|licen/i.test(path)) return 'legal-counsel';
+      return 'product-marketing-manager';
     default: return /monitor|alert|slo|grafana|prometheus/i.test(path + cmd) ? 'sre' : 'devops';
   }
 }
@@ -134,6 +150,8 @@ export function guessRole(phase, toolName, toolInput = {}, flavor = 'classic') {
 /**
  * Phase from a free-form status.md: use the last section that mentions phases, take the
  * highest "Phase N" marked done ([x] or "complete") and return the next one (max 6).
+ * `last` is the section's final phase: an optional last phase (Launch) a section doesn't list isn't
+ * part of it, so older sections are complete one phase earlier (ADR-018).
  */
 function phaseFromName(line, flavor) {
   const names = PHASE_NAMES[flavor] || PHASE_NAMES.classic;
@@ -143,7 +161,7 @@ function phaseFromName(line, flavor) {
   return null;
 }
 
-export function parsePhase(text, maxPhase = 6, flavor = maxPhase === 7 ? 'plus' : 'classic') {
+export function parsePhase(text, maxPhase = 6, flavor = maxPhase >= 7 ? 'plus' : 'classic') {
   if (!text) return null;
   const sections = String(text).split(/^(?=#\s)/m).reverse();
   for (const section of sections) {
@@ -162,7 +180,8 @@ export function parsePhase(text, maxPhase = 6, flavor = maxPhase === 7 ? 'plus' 
       if (/\[x\]|complete/i.test(line) && !/\[ \]/.test(line)) done.push(n);
     }
     const highest = done.length ? Math.max(...done) : -1;
-    return { phase: Math.min(maxPhase, highest + 1), done: [...new Set(done)].sort(), complete: highest >= maxPhase };
+    const last = FLAVORS[flavor]?.optionalLast && !lines.some(([n]) => n === maxPhase) ? maxPhase - 1 : maxPhase;
+    return { phase: Math.min(last, highest + 1), done: [...new Set(done)].sort(), complete: highest >= last, last };
   }
   return null;
 }
@@ -178,7 +197,7 @@ export function parseActive(text) {
   if (!a || typeof a !== 'object') return null;
   const role = String(a.role || '');
   if (role !== MEETING && !ROLE_IDS.has(role)) return null;
-  const phase = Number.isInteger(a.phase) && a.phase >= 0 && a.phase <= 7 ? a.phase : null;
+  const phase = Number.isInteger(a.phase) && a.phase >= 0 && a.phase <= 8 ? a.phase : null;
   const at = Date.parse(a.updatedAt);
   return {
     role,
@@ -263,7 +282,7 @@ export function createTenx({ fs, now = () => Date.now() }) {
     // The file's mtime is when it was really written; updatedAt is typed by Claude and can be off (ADR-015).
     if (active) active.at = activeFile.mtimeMs ?? active.at;
     p.active = active && now() - active.at < ACTIVE_MAX_AGE_MS ? active : null;
-    if (p.active && (p.active.phase === 7 || /^u[xi]-designer$/.test(p.active.role) || /experience design/i.test(p.active.phaseName))) p.flavor = 'plus';
+    if (p.active && (p.active.phase >= 7 || PLUS_ONLY_ROLES.test(p.active.role) || /experience design|launch/i.test(p.active.phaseName))) p.flavor = 'plus';
 
     // Kanban: tasks from the newest engineering-manager decision.
     const newest = (role) => fs.list(join(dir, 'decisions', role))
@@ -289,13 +308,22 @@ export function createTenx({ fs, now = () => Date.now() }) {
 
   const fromActive = (p) => !!p.active && !(p.newRun && p.active.at < p.newRun.at);
 
+  /** active.json names a phase before the end: a new feature is under way, so not complete. */
+  function activeBehind(p) {
+    if (!fromActive(p) || p.active.phase === null) return false;
+    const last = p.last ?? lastPhase(p.flavor);
+    // Launch skipped: the plugin leaves active.json at Delivery while status.md ticks Launch (ADR-018).
+    const skippedLast = FLAVORS[p.flavor].optionalLast && p.active.phase === last - 1 && p.done.includes(last);
+    return p.active.phase < last && !skippedLast;
+  }
+
   /** What the owner's room shows: the live project state. */
   function liveView(p) {
     const fresh = p.newRun && !fromActive(p);
     return {
       phase: effectivePhase(p),
       done: fresh ? [] : p.done,
-      complete: p.complete && !fresh && !(fromActive(p) && p.active.phase !== null && p.active.phase < lastPhase(p.flavor)),
+      complete: p.complete && !fresh && !activeBehind(p),
       active: fromActive(p) ? { feature: p.active.feature, task: p.active.task, phaseName: p.active.phaseName } : null,
       workload: p.workload,
       kanban: p.kanban,

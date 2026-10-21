@@ -7,13 +7,16 @@ import {
 
 const ids = (L) => L.zones.map((z) => `${z.id}@${z.col},${z.row}x${z.span}`);
 
-test('built-in layout: meeting and four departments on top, three plus flex and lounge below', () => {
+test('built-in layout: meeting and six departments on top, five plus flex and lounge below (ADR-018)', () => {
   const L = companyLayout(null);
-  assert.equal(L.cols, 6);
+  assert.equal(L.cols, 8);
   assert.deepEqual(ids(L), [
-    'meeting@0,0x2', 'strategy@2,0x1', 'design@3,0x1', 'architecture@4,0x1', 'planning@5,0x1',
-    'engineering@0,1x1', 'quality@1,1x1', 'operations@2,1x1', 'flex@3,1x1', 'lounge@4,1x2',
+    'meeting@0,0x2', 'strategy@2,0x1', 'design@3,0x1', 'architecture@4,0x1', 'planning@5,0x1', 'engineering@6,0x1', 'quality@7,0x1',
+    'operations@0,1x1', 'marketing@1,1x1', 'sales@2,1x1', 'customer-success@3,1x1', 'legal-finance@4,1x1', 'flex@5,1x1', 'lounge@6,1x2',
   ]);
+  assert.equal(L.roleDept.get('cfo'), 'legal-finance');
+  assert.equal(L.zones.find((z) => z.id === 'legal-finance').label, 'Legal & Finance');
+  assert.deepEqual(BUILTIN_DEPARTMENTS.find((d) => d.id === 'sales').phases, [1, 8]);
   assert.equal(L.roleDept.get('sde'), 'engineering');
   assert.equal(L.zones.find((z) => z.id === 'strategy').label, 'Strategie');
 });
@@ -66,6 +69,15 @@ test('cases: no exact role → default role of the phase; meeting role → meeti
   assert.equal(a.role, 'architect');
   assert.equal(a.guessed, true);
   assert.equal(b.meeting, true);
+});
+
+test('cases: go-to-market roles and phase 8 Launch (ADR-018)', () => {
+  const tenx = { '/p/a': { flavor: 'plus', phase: 8, roles: {} }, '/p/b': { flavor: 'plus', phase: 1, roles: { s2: { role: 'cfo', guessed: false } } } };
+  const [a, b] = deriveCases([session('s1', '/p/a'), session('s2', '/p/b')], tenx);
+  assert.equal(a.role, 'product-marketing-manager');
+  assert.equal(a.phaseName, 'Marketing');
+  assert.equal(b.role, 'cfo');
+  assert.deepEqual(unknownRoles([a, b], null), [], 'built-in departments know every new role');
 });
 
 test('stableSlots keeps indexes, fills gaps and overflows', () => {

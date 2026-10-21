@@ -166,8 +166,11 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
   function applyFlavor(next) {
     flavor = next === 'plus' ? 'plus' : 'classic';
     LAY = LAYOUTS[flavor];
-    ROLES = Object.keys(ROLE_INFO).filter((r) => flavor === 'plus' || ROLE_INFO[r].dept !== 'design');
-    PH = phasesFor(flavor);
+    ROLES = Object.keys(ROLE_INFO).filter((r) => LAY.zones[ROLE_INFO[r].dept]);
+    // This legacy view has no go-to-market zones (ADR-018): its phases end at Delivery.
+    const full = phasesFor(flavor);
+    const n = full.depts.findIndex((d) => !LAY.zones[d]);
+    PH = n < 0 ? full : { ...full, depts: full.depts.slice(0, n), defaults: full.defaults.slice(0, n) };
     L = { W: MARGIN * 2 + LAY.cols * ZONE_W, H: WALL_H + 2 + 2 * ZONE_H + BOTTOM };
     for (const [id, ch] of [...chars]) if (ch.member && !ROLES.includes(ch.member)) chars.delete(id);
     for (const role of ROLES) {
@@ -230,7 +233,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
   }
 
   // ---------- who is doing what ----------
-  const currentPhase = () => (Number.isInteger(tenx.phase) ? tenx.phase : null);
+  const currentPhase = () => (Number.isInteger(tenx.phase) ? Math.min(tenx.phase, PH.depts.length - 1) : null);
 
   function computeDriven() {
     driven = new Map();

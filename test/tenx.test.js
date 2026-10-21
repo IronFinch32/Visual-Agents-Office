@@ -52,9 +52,9 @@ test('parsePhase takes the last section that mentions phases', () => {
 # Status — b
 - [x] Spec + ADR
 `;
-  assert.deepEqual(parsePhase(text), { phase: 3, done: [0, 1, 2], complete: false });
+  assert.deepEqual(parsePhase(text), { phase: 3, done: [0, 1, 2], complete: false, last: 6 });
   assert.equal(parsePhase('- [ ] Phase 1: Strategy\n').phase, 0);
-  assert.deepEqual(parsePhase('phase: Strategy Complete'), { phase: 2, done: [1], complete: false }, 'phase names are understood');
+  assert.deepEqual(parsePhase('phase: Strategy Complete'), { phase: 2, done: [1], complete: false, last: 6 }, 'phase names are understood');
   assert.equal(parsePhase('- [x] Phase 6: Delivery Complete').complete, true);
   assert.equal(parsePhase(''), null);
   assert.equal(parsePhase('no phases here'), null);
@@ -184,7 +184,7 @@ test('10x-Team-Plus: skills, UX/UI folders and guesses per department', async ()
   assert.equal(isPlusSignal({ skill: '10x-Team:sde' }), false);
   assert.equal(isPlusSignal({ path: '/r/.10x/decisions/ui-designer/x.md' }), true);
   assert.equal(isPlusSignal({ statusText: '- [ ] Phase 7: Delivery' }), true);
-  assert.equal(lastPhase('plus'), 7);
+  assert.equal(lastPhase('plus'), 8);
   assert.equal(FLAVORS.plus.implPhase, 5);
   assert.equal(guessRole(2, 'Write', { file_path: '/r/docs/flows.md' }, 'plus'), 'ux-designer');
   assert.equal(guessRole(2, 'Write', { file_path: '/r/src/theme/tokens.css' }, 'plus'), 'ui-designer');
@@ -226,7 +226,7 @@ test('Classic project stays classic and completes at phase 6', () => {
 
 test('phase names: Experience Design is not read as Design', () => {
   const text = '# Status — x\n- [x] Brainstorming\n- [x] Strategy\n- [x] Experience Design\n- [ ] Design\n';
-  assert.deepEqual(parsePhase(text, 7, 'plus'), { phase: 3, done: [0, 1, 2], complete: false });
+  assert.deepEqual(parsePhase(text, 8, 'plus'), { phase: 3, done: [0, 1, 2], complete: false, last: 7 });
 });
 
 test('parseActive validates the plugin contract', async () => {
@@ -414,4 +414,54 @@ test('the active.json time is its mtime, not the updatedAt Claude typed', () => 
   const snap = tenx.snapshot()[root];
   assert.equal(snap.active?.task, 'Testen', 'an 8 h old updatedAt does not make a fresh file stale');
   assert.equal(snap.roles.s.role, 'qa');
+});
+
+test('10x-Team-Plus 0.5: go-to-market roles and the Launch phase (ADR-018)', async () => {
+  const { isPlusSignal, parseActive } = await import('../server/tenx.js');
+  for (const r of ['product-marketing-manager', 'sales-lead', 'customer-success-manager', 'legal-counsel', 'cfo']) {
+    assert.equal(roleFromSkill(`10x-Team-Plus:${r}`), r);
+    assert.equal(roleFromPath(`/r/.10x/decisions/${r}/launch.md`), r);
+    assert.equal(isPlusSignal({ path: `/r/.10x/decisions/${r}/x.md` }), true);
+    assert.equal(parseActive(`{ "role": "${r}", "phase": 8 }`).role, r);
+  }
+  assert.equal(parseActive('{ "role": "cfo", "phase": 8 }').phase, 8);
+  assert.equal(parseActive('{ "role": "cfo", "phase": 9 }').phase, null);
+  assert.equal(roleFromPath('/r/.10x/launch/shop/landing.md'), 'product-marketing-manager');
+  assert.equal(roleFromPath('/r/.10x/reviews/2026-10-22-launch-readiness.md'), 'product-marketing-manager');
+  assert.equal(isPlusSignal({ statusText: '- [ ] Phase 8: Launch' }), true);
+  assert.equal(guessRole(8, 'Write', { file_path: '/r/.10x/launch/x/pricing.md' }, 'plus'), 'sales-lead');
+  assert.equal(guessRole(8, 'Write', { file_path: '/r/docs/faq.md' }, 'plus'), 'customer-success-manager');
+  assert.equal(guessRole(8, 'Write', { file_path: '/r/docs/privacy.md' }, 'plus'), 'legal-counsel');
+  assert.equal(guessRole(8, 'Write', { file_path: '/r/site/index.html' }, 'plus'), 'product-marketing-manager');
+  assert.equal(guessRole(7, 'Write', { file_path: '/r/ci.yml' }, 'plus'), 'devops', 'Delivery is still Operations');
+});
+
+test('parsePhase: a section with Launch ends at 8, an older one at 7', () => {
+  const lines = (ticked, upTo) => [...Array(upTo + 1).keys()].map((n) => `- [${n <= ticked ? 'x' : ' '}] Phase ${n}`).join('\n');
+  assert.deepEqual(parsePhase(lines(7, 7), 8, 'plus'), { phase: 7, done: [0, 1, 2, 3, 4, 5, 6, 7], complete: true, last: 7 });
+  assert.deepEqual(parsePhase(lines(7, 8), 8, 'plus'), { phase: 8, done: [0, 1, 2, 3, 4, 5, 6, 7], complete: false, last: 8 });
+  assert.equal(parsePhase(`${lines(7, 7)}\n- [x] Phase 8: Launch — skipped (nothing to launch)`, 8, 'plus').complete, true);
+  assert.equal(parsePhase(lines(6, 6), 6, 'classic').complete, true, 'classic unchanged');
+});
+
+test('Plus project: Launch keeps the project open; a skipped Launch completes it', () => {
+  const { root, x } = project();
+  mkdirSync(join(x, 'decisions', 'ux-designer'), { recursive: true });
+  writeFileSync(join(x, 'adrs', '001-a.md'), '# ADR-001');
+  const status = (launch) => [...[0, 1, 2, 3, 4, 5, 6, 7].map((n) => `- [x] Phase ${n}`), `- [${launch ? 'x' : ' '}] Phase 8: Launch${launch ? ' — skipped (nothing to launch)' : ''}`].join('\n');
+  writeFileSync(join(x, 'status.md'), status(false));
+  const active = (role, phase) => writeFileSync(join(x, 'active.json'), JSON.stringify({ role, phase, phaseName: phase === 8 ? 'Launch' : 'Delivery', feature: 'f', task: 't', updatedAt: new Date().toISOString() }));
+  active('cfo', 8);
+  const tenx = createTenx({ fs: nodeFs });
+  tenx.onEvent({ session_id: 's', hook_event_name: 'SessionStart' }, agent(root));
+  tenx.onEvent(pre('Read', { file_path: join(root, 'README.md') }), agent(root));
+  let snap = tenx.snapshot()[root];
+  assert.equal(snap.phase, 8);
+  assert.equal(snap.complete, false);
+  assert.equal(snap.roles.s.role, 'cfo');
+  writeFileSync(join(x, 'status.md'), status(true));
+  active('devops', 7);
+  tenx.refresh(root);
+  snap = tenx.snapshot()[root];
+  assert.equal(snap.complete, true, 'Launch skipped: active.json stays at Delivery, still complete');
 });

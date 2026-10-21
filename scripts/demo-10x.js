@@ -7,7 +7,7 @@ import { join, dirname } from 'node:path';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const NAMES = {
-  plus: ['Brainstorming', 'Strategy', 'Experience Design', 'Design', 'Planning', 'Implementation', 'Verification', 'Delivery'],
+  plus: ['Brainstorming', 'Strategy', 'Experience Design', 'Design', 'Planning', 'Implementation', 'Verification', 'Delivery', 'Launch'],
   classic: ['Brainstorming', 'Strategy', 'Design', 'Planning', 'Implementation', 'Verification', 'Delivery'],
 };
 
@@ -67,6 +67,16 @@ export async function runTenxDemo(send, { flavor = 'plus', root: rootDir, sessio
   await write('.10x/decisions/cto/checkout.md', '# CTO — checkout\n- Build: checkout is core business.');
   await active('product-manager', 1, 'User stories voor de checkout');
   await write('.10x/decisions/product-manager/checkout.md', '# PM — checkout\n1. Betalen met iDEAL.\n2. Kortingscode gebruiken.');
+  if (plus) {
+    // 10x-Team-Plus 0.5: commercial advisors in Strategy (ADR-018)
+    await active('cfo', 1, 'Kosten per transactie en break-even');
+    await write('.10x/decisions/cfo/checkout.md', '# CFO — checkout\nViable: €0,29 per iDEAL-betaling.');
+    await sleep(3000);
+    await active('sales-lead', 1, 'Prijsmodel voor de webshop');
+    await write('.10x/decisions/sales-lead/checkout.md', '# Sales — checkout\nGratis verzending vanaf €50.');
+    await active('legal-counsel', 1, 'Wat mag er met betaalgegevens?');
+    await write('.10x/decisions/legal-counsel/checkout.md', '# Legal — checkout\nGeen kaartgegevens opslaan; PSP doet dat.');
+  }
   // someone jumps the gun: code before there is an ADR
   await ev('PreToolUse', { tool_name: 'Edit', tool_input: { file_path: join(root, 'src', 'checkout.ts') } });
   await done(1);
@@ -136,6 +146,24 @@ export async function runTenxDemo(send, { flavor = 'plus', root: rootDir, sessio
   await active('devops', 6 + o, 'Canary release 10%');
   await write('.10x/decisions/devops/checkout.md', '# DevOps — checkout\nFeature flag + canary 10%.');
   await sleep(2000);
-  await done(6 + o); // complete → party
+  if (plus) {
+    await done(7);
+    await sleep(6000);
+    await active('product-marketing-manager', 8, 'Launchplan en landingspagina');
+    await write('.10x/launch/checkout/landing.md', '# Nieuwe checkout\nBetaal in drie klikken.');
+    await sleep(3000);
+    await active('sales-lead', 8, 'Prijspagina bijwerken');
+    await write('.10x/launch/checkout/pricing.md', '# Prijzen\nGeen extra kosten voor iDEAL.');
+    await sleep(3000);
+    await active('customer-success-manager', 8, 'FAQ: betalen en terugbetalen');
+    await write('.10x/decisions/customer-success-manager/checkout.md', '# CS — checkout\nFAQ: hoe werkt een kortingscode?');
+    await sleep(3000);
+    await active('legal-counsel', 8, 'Privacyverklaring checken');
+    await write('.10x/decisions/legal-counsel/checkout.md', '# Legal — checkout\nApproved with conditions.');
+    await sleep(3000);
+    await active('product-marketing-manager', 8, 'Launch readiness');
+    await write('.10x/reviews/2026-10-22-launch-readiness.md', '# Launch readiness\nReady to launch.');
+    await done(8); // complete → party
+  } else await done(6 + o); // complete → party
   await ev('Stop');
 }

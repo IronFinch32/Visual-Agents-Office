@@ -16,6 +16,12 @@ export const ROLE_INFO = {
   security: { label: 'Security', dept: 'quality', outfit: 'cap', shirt: '#3a3a44', accent: '#16161c', acc: 'shield' },
   devops: { label: 'DevOps', dept: 'operations', outfit: 'hoodie', shirt: '#d9773a', acc: 'headphones' },
   sre: { label: 'SRE', dept: 'operations', outfit: 'hoodie', shirt: '#c0453a', acc: 'pager' },
+  // 10x-Team-Plus 0.5: go-to-market (ADR-018)
+  'product-marketing-manager': { label: 'PMM', dept: 'marketing', outfit: 'planner', shirt: '#e8833a', acc: 'megaphone' },
+  'sales-lead': { label: 'Sales', dept: 'sales', outfit: 'manager', shirt: '#2f5f9a', accent: '#4ea3ff', acc: 'phone' },
+  'customer-success-manager': { label: 'CS', dept: 'customer-success', outfit: 'hoodie', shirt: '#3fae6a', acc: 'headset' },
+  'legal-counsel': { label: 'Legal', dept: 'legal-finance', outfit: 'manager', shirt: '#4a2b3a', accent: '#8a2b3a', acc: 'scales' },
+  cfo: { label: 'CFO', dept: 'legal-finance', outfit: 'manager', shirt: '#2c2f45', accent: '#e8c35a', acc: 'calculator' },
 };
 
 export const DEPTS = {
@@ -27,6 +33,10 @@ export const DEPTS = {
   engineering: { label: 'Engineering', rug: '#3f6f5c', roles: ['sde', 'dba'] },
   quality: { label: 'Kwaliteit', rug: '#7a6a3f', roles: ['qa', 'security'] },
   operations: { label: 'Operations', rug: '#7a4d3f', roles: ['devops', 'sre'] },
+  marketing: { label: 'Marketing', rug: '#8a5a3f', roles: ['product-marketing-manager'] },
+  sales: { label: 'Sales', rug: '#3f5f7a', roles: ['sales-lead'] },
+  'customer-success': { label: 'Customer Success', rug: '#3f7a5a', roles: ['customer-success-manager'] },
+  'legal-finance': { label: 'Legal & Finance', rug: '#5f4a6e', roles: ['legal-counsel', 'cfo'] },
   lounge: { label: 'Lounge', rug: '#3f6f73', roles: [] },
 };
 
@@ -38,8 +48,8 @@ export const FLAVOR_PHASES = {
     implPhase: 4,
   },
   plus: {
-    depts: ['meeting', 'strategy', 'design', 'architecture', 'planning', 'engineering', 'quality', 'operations'],
-    defaults: ['product-manager', 'product-manager', 'ux-designer', 'architect', 'engineering-manager', 'sde', 'qa', 'devops'],
+    depts: ['meeting', 'strategy', 'design', 'architecture', 'planning', 'engineering', 'quality', 'operations', 'marketing'],
+    defaults: ['product-manager', 'product-manager', 'ux-designer', 'architect', 'engineering-manager', 'sde', 'qa', 'devops', 'product-marketing-manager'],
     implPhase: 5,
   },
 };
@@ -102,6 +112,18 @@ export function drawAccessory(ctx, x, y, role, { seated, pose, t = 0 }) {
       break;
     case 'palette':
       p(-3, 10, 4, 3, '#d9a066'); p(-3, 10, 1, 1, '#ff4d5e'); p(-1, 10, 1, 1, '#4ea3ff'); p(-2, 12, 1, 1, '#3ddc84');
+      break;
+    case 'megaphone':
+      if (pose !== 'working') { p(-3, 9, 2, 3, '#d8dde8'); p(-5, 8, 2, 5, '#f1c40f'); p(-1, 10, 1, 1, '#1b1b22'); }
+      break;
+    case 'phone':
+      p(9, 2, 2, 4, '#1b1b22'); p(9, 3, 1, 2, '#4ea3ff');
+      break;
+    case 'scales':
+      if (pose !== 'working') { p(-2, 8, 1, 6, '#c9a227'); p(-4, 8, 5, 1, '#c9a227'); p(-5, 9, 2, 1, '#e8c35a'); p(0, 9, 2, 1, '#e8c35a'); }
+      break;
+    case 'calculator':
+      if (pose !== 'working') { p(-2, 9, 4, 5, '#3a3d4a'); p(-1, 10, 2, 1, '#9fe8a0'); p(-1, 12, 1, 1, '#d8dde8'); p(1, 12, 1, 1, '#d8dde8'); }
       break;
     case 'clipboard':
       if (pose !== 'working') { p(-2, 9, 3, 5, '#a0522d'); p(-1, 10, 1, 3, '#ffffff'); }
