@@ -1,1 +1,1 @@
-{ "role": "meeting", "phase": 0, "phaseName": "Brainstorming", "feature": "lounge-pool", "task": "Pooltafel in de lounge bespreken", "updatedAt": "2026-10-21T16:28:01Z" }
+{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "lounge-pool", "task": "pool.js fysica en tests", "updatedAt": "2026-10-21T16:30:43Z" }

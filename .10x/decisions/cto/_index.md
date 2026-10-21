@@ -10,3 +10,4 @@
 - [ceo-floor](ceo-floor.md)
 - [team-lounge-darts](team-lounge-darts.md)
 - [no-directie](no-directie.md)
+- [lounge-pool](lounge-pool.md) — pooltafel in de lounge (sfeer)

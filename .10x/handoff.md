@@ -1,4 +1,4 @@
-# Handoff — ceo-sessionend
+# Handoff — lounge-pool
 
-**Status:** opgeleverd (Phase 7), commit 0a1dc09, ADR-013.
-- Oorzaak: de app zet een stille CEO-sessie stil (SessionEnd) en hervat haar met hetzelfde id; de server wiste de CEO daarbij. Nu blijft ze, behalve bij /clear of logout. Runbook: `decisions/sre/ceo-sessionend.md`. Rollback: `git revert 0a1dc09`.
+**Status:** Phase 4 klaar → SDE. ADR-014, spec `specs/2026-10-21-lounge-pool-design.md`.
+Taken T1–T4 in `decisions/engineering-manager/lounge-pool.md`; aanpak in `decisions/senior-engineer/lounge-pool.md`.

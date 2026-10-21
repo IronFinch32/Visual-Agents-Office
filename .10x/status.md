@@ -198,11 +198,18 @@
 
 # Status — lounge-pool
 
-- [ ] Phase 0: Brainstorming
-- [ ] Phase 1: Strategy
-- [ ] Phase 2: Experience Design
-- [ ] Phase 3: Design
-- [ ] Phase 4: Planning
+- [x] Phase 0: Brainstorming
+- [x] Phase 1: Strategy
+- [x] Phase 2: Experience Design
+- [x] Phase 3: Design
+- [x] Phase 4: Planning
 - [ ] Phase 5: Implementation
 - [ ] Phase 6: Verification
 - [ ] Phase 7: Delivery
+
+## Progress
+- Gebruiker koos: speelbaar potje (geen toeschouwers). Spec `specs/2026-10-21-lounge-pool-design.md`, ADR-014.
+- [ ] T1 pool.js + tests
+- [ ] T2 sprites + pose cue
+- [ ] T3 tenx-room.js koppeling
+- [ ] T4 README, npm test, browsercheck

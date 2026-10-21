@@ -18,3 +18,4 @@
 - [ceo-persist](ceo-persist.md)
 - [no-directie](no-directie.md) — ADR-012
 - [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)
+- [lounge-pool](lounge-pool.md) — ADR-014: pool.js + modus pool
