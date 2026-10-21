@@ -1,4 +1,4 @@
-# Handoff — lounge-pool
+# Handoff — session-sync
 
-**Status:** opgeleverd (Phase 7), commit 259b02f, ADR-014.
-- Pooltafel in de lounge; twee teamleden spelen een cosmetisch potje met echte rolfysica (`web/pool.js`). Runbook: `decisions/sre/lounge-pool.md`. Rollback: `git revert 259b02f`.
+Spec: `specs/2026-10-21-session-sync-design.md` (goedgekeurd door de gebruiker: hook in 10x-Team-Plus voor punt 3; kantoor per-sessie-stand voor punt 1 en 2).
+Volgende: CTO/PM.
