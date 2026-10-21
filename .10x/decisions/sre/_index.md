@@ -12,3 +12,4 @@
 - [no-directie](no-directie.md)
 - [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)
 - [lounge-pool](lounge-pool.md) — geen monitoring nodig
+- [session-sync](session-sync.md) — runbook stand per sessie
