@@ -4,6 +4,8 @@ import { isCeoSkill, isCeoPrompt } from './tenx.js';
 
 export const LIMITS = { task: 140, activity: 80, reason: 120, name: 40, tool: 60 };
 export const STALE_MS = 30 * 60 * 1000;
+// The CEO session often waits a long time for the user; it stays until SessionEnd, with this as a crash safety net (ADR-010).
+export const CEO_STALE_MS = 12 * 60 * 60 * 1000;
 export const SUBAGENT_DONE_TTL_MS = 10 * 60 * 1000;
 
 const WAITING_TOOLS = new Set(['AskUserQuestion', 'ExitPlanMode']);
@@ -261,12 +263,12 @@ export function applyEvent(state, evt, now = Date.now()) {
 }
 
 /**
- * Remove stale sessions and finished subagents. Returns true when something was removed.
+ * Remove stale sessions (the CEO session only after CEO_STALE_MS) and finished subagents. Returns true when something was removed.
  */
 export function prune(state, now = Date.now()) {
   let changed = false;
   for (const [id, a] of state.agents) {
-    const stale = now - a.updatedAt > STALE_MS;
+    const stale = now - a.updatedAt > (a.kind === 'session' && a.ceo ? CEO_STALE_MS : STALE_MS);
     const finishedSub = a.kind === 'subagent' && a.status === 'done' && now - a.statusSince > SUBAGENT_DONE_TTL_MS;
     const orphan = a.kind === 'subagent' && !state.agents.has(a.parentId);
     if (stale || finishedSub || orphan) {

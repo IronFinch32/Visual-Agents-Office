@@ -9,7 +9,7 @@ import {
 } from './sprites.js';
 import {
   ROLE_INFO, DEPTS, phasesFor, roleLooks, drawAccessory, drawFolder, drawZone, drawMeetingTable,
-  drawTimeline, drawAdrFrame, drawBeacon, drawStamp, drawCeoDesk, drawInbox, drawSofa, drawMiniDesk,
+  drawTimeline, drawAdrFrame, drawBeacon, drawStamp, drawCeoDesk, drawInbox, drawSofa, drawMiniDesk, drawDartboard, drawDart,
   drawPaperStack, drawThought, drawSmoke, drawKanban, drawBanner,
 } from './tenx-sprites.js';
 import { createNav } from './nav.js';
@@ -21,7 +21,8 @@ const ZONE_H = 104;
 const BOTTOM = 8;
 const WALK_SPEED = 60;
 const MAX_PARTICLES = 160;
-const QUIET_MS = 10 * 60 * 1000;
+const QUIET_MS = 10 * 60 * 1000; // a quiet team hangs out in the lounge (ADR-010)
+const AWAY_MS = 60 * 60 * 1000; // ...and goes home after an hour
 const FAIL_MS = 4000;
 
 // Zone grid per flavor: [col, row, span].
@@ -35,7 +36,11 @@ const LAYOUTS = {
     zones: { meeting: [0, 0], strategy: [1, 0], design: [2, 0], architecture: [3, 0], planning: [4, 0], engineering: [0, 1], quality: [1, 1], operations: [2, 1], lounge: [3, 1], ceo: [4, 1] },
   },
 };
-const LOUNGE_SPOTS = [[14, 48], [30, 52], [50, 46], [64, 64], [14, 98], [36, 98], [58, 98]];
+const LOUNGE_SPOTS = [[14, 48], [64, 48], [26, 64], [64, 66], [14, 98], [36, 98], [58, 98]];
+// Darts (ADR-010): bullseye and the two throwing spots, relative to the lounge zone.
+const DART_BOARD = [38, 14];
+const DART_SPOTS = [[31, 46], [47, 46]];
+const DART_CHAT = ['180!', 'Bull!', 'Mis…', 'Dubbel 20!', 'Nog een potje?', 'Net ernaast'];
 const CHAT = ['☕', 'Mooi werk!', 'Nog koffie?', '…', 'Haha', 'Echt?'];
 
 const STATUS_TEXT = {
@@ -74,6 +79,8 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
   let floor = false; // a CEO floor exists above the building (ADR-009): no CEO office in this room
   let quietNow = false;
   let shippedHome = false;
+  let lullNow = false;
+  let darts = { turn: 0, next: 0, stuck: [], flying: null };
 
   // ---------- geometry ----------
   const zone = (name) => {
@@ -102,6 +109,8 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     const bottom = Array.from({ length: n }, (_, i) => ({ x: Math.round(tx + gap / 2 + i * gap), y: z.y + 86, seated: false }));
     return { z, tx, tw, ty: z.y + 54, seats: [...top, ...bottom], head: { x: tx - 7, y: z.y + 72 } };
   }
+  const dartBoard = () => { const z = zone('lounge'); return { x: z.x + DART_BOARD[0], y: z.y + DART_BOARD[1] }; };
+  const dartSpot = (i) => { const z = zone('lounge'); const [dx, dy] = DART_SPOTS[i]; return { x: z.x + dx, y: z.y + dy }; };
   const loungeSpot = (i) => { const z = zone('lounge'); const [dx, dy] = LOUNGE_SPOTS[i % LOUNGE_SPOTS.length]; return { x: z.x + dx, y: z.y + dy }; };
   function ceoGeo() {
     const z = zone('ceo');
@@ -130,6 +139,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     nav.block(lz.x + lz.w - 24, lz.y + 18, 16, 18); // coffee machine
     nav.block(lz.x + 6, lz.y + 77, 38, 11); // sofa
     nav.block(lz.x + 44, lz.y + 58, 12, 7); // table
+    nav.block(lz.x + DART_BOARD[0] - 5, lz.y + DART_BOARD[1] + 12, 10, 6); // dartboard stand
     if (floor) return;
     const c = ceoGeo();
     nav.block(c.desk.x, c.desk.y + 2, c.desk.w, 14);
@@ -301,8 +311,11 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     const idle = agents.every((a) => a.status !== 'working' && a.status !== 'waiting');
     // Under a CEO floor a shipped team goes home after the party; the room stays until the session ends.
     shippedHome = floor && !!tenx.complete && !party && agents.length > 0 && idle;
-    const quiet = shippedHome || (agents.length > 0 && idle && agents.every((a) => now - a.updatedAt > QUIET_MS));
+    const silentFor = (ms) => agents.length > 0 && idle && agents.every((a) => now - a.updatedAt > ms);
+    const quiet = shippedHome || silentFor(AWAY_MS);
+    const lull = !quiet && silentFor(QUIET_MS);
     quietNow = quiet;
+    lullNow = lull;
     if (standup && standup.until < t) standup = null;
     if (handoff && handoff.until < t) handoff = null;
 
@@ -312,7 +325,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     // waiting sessions queue at the CEO's door, in order of waiting time
     const queue = [...driven].filter(([, d]) => d.agent.status === 'waiting').sort((a, b) => a[1].agent.statusSince - b[1].agent.statusSince).map(([r]) => r);
     const meeting = meetingGeo();
-    const meetingRoles = standup ? [...standup.roles] : meetingMode ? ['product-manager', 'cto', ...(flavor === 'plus' ? ['ux-designer'] : []), 'architect', 'engineering-manager', 'qa'] : [];
+    const meetingRoles = standup ? [...standup.roles] : meetingMode && !lull ? ['product-manager', 'cto', ...(flavor === 'plus' ? ['ux-designer'] : []), 'architect', 'engineering-manager', 'qa'] : [];
     const loungeTaken = new Map(); // spot index -> id
 
     // finished subagents get the lounge first
@@ -331,7 +344,9 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     };
 
     const finished = new Set((tenx.done || []).map((p) => PH.depts[p]));
-    let coffeeCount = members.filter((mb) => mb.mode === 'coffee').length;
+    const inLounge = (mb) => mb.mode === 'coffee' || mb.mode === 'darts';
+    let loungeCount = members.filter(inLounge).length;
+    const dartsTaken = new Set(members.filter((mb) => mb.mode === 'darts' && t < mb.modeUntil).map((mb) => mb.dartSpot));
     let meetingSeat = 0;
     for (const ch of members) {
       const role = ch.member;
@@ -343,11 +358,12 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
       else if (handoff && (handoff.giver === role || handoff.receiver === role)) mode = 'handoff';
       else if (queue.includes(role)) mode = 'ceo';
       else if (meetingRoles.includes(role)) mode = 'meeting';
-      else if (ch.mode === 'coffee' && t < ch.modeUntil) mode = 'coffee';
-      else if (!busy && coffeeCount < 2 && Math.random() < dt / (finished.has(ROLE_INFO[role].dept) ? 25 : 70)) {
-        mode = 'coffee';
-        ch.modeUntil = t + 8 + Math.random() * 8;
-        coffeeCount++;
+      else if (inLounge(ch) && t < ch.modeUntil) mode = ch.mode;
+      else if (!busy && loungeCount < (lull ? 5 : 3) && Math.random() < dt / (lull ? 8 : finished.has(ROLE_INFO[role].dept) ? 15 : 40)) {
+        const free = [0, 1].find((i) => !dartsTaken.has(i));
+        if (free !== undefined && Math.random() < 0.4) { mode = 'darts'; ch.dartSpot = free; dartsTaken.add(free); } else mode = 'coffee';
+        ch.modeUntil = t + (lull ? 15 + Math.random() * 20 : 12 + Math.random() * 13);
+        loungeCount++;
       }
       if (ch.mode === 'away' && mode !== 'away') { ch.hidden = false; const dd = door(); Object.assign(ch, { x: dd.x, y: dd.y, path: [], goal: null }); }
       ch.mode = mode;
@@ -361,9 +377,13 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
         const i = takeLounge(ch);
         if (i !== undefined) { const s = loungeSpot(i); goTo(ch, s.x, s.y); }
         else { const s = meeting.seats[meetingSeat++ % meeting.seats.length]; goTo(ch, s.x, s.y); } // party overflow in the meeting room
-      } else if (mode === 'handoff') runHandoff(ch, role, t);
+      } else if (mode === 'darts') { const s = dartSpot(ch.dartSpot); goTo(ch, s.x, s.y); }
+      else if (mode === 'handoff') runHandoff(ch, role, t);
       if (mode !== 'coffee' && mode !== 'party') ch.loungeSpot = undefined;
+      if (mode !== 'darts') ch.dartSpot = undefined;
     }
+
+    playDarts(members.filter((mb) => mb.mode === 'darts' && !mb.walking && !mb.hidden), t);
 
     // the CEO (upstairs when there is a CEO floor)
     if (!ceo) { /* nothing to do */ } else if (quiet) { ceo.mode = 'away'; goTo(ceo, door().x, door().y); }
@@ -386,6 +406,29 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
       const f = flexSpot(ch.flexRole, Math.min(k, 2));
       goTo(ch, f.x, f.y);
     }
+  }
+
+  // One game at a time: the players take turns, a dart flies and sticks; after three darts they're pulled out.
+  function playDarts(players, t) {
+    const f = darts.flying;
+    if (f && t >= f.start + f.dur) {
+      if (darts.stuck.length >= 3) darts.stuck = [];
+      darts.stuck.push({ x: f.to.x, y: f.to.y, color: f.color });
+      darts.flying = null;
+      if (darts.stuck.length === 3 && Math.random() < 0.35) f.by.say = { text: DART_CHAT[Math.floor(Math.random() * DART_CHAT.length)], until: t + 1.8 };
+    }
+    if (!players.length || darts.flying || t < darts.next) return;
+    const p = players.sort((a, b) => a.dartSpot - b.dartSpot)[darts.turn++ % players.length];
+    const b = dartBoard();
+    const r = Math.random() < 0.12 ? 7 : Math.random() * 5; // now and then a miss on the backboard
+    const ang = Math.random() * Math.PI * 2;
+    const info = ROLE_INFO[p.member];
+    p.throwUntil = t + 0.3;
+    darts.flying = {
+      from: { x: p.x + 4, y: p.y - 24 }, to: { x: b.x + Math.cos(ang) * r, y: b.y + Math.sin(ang) * r - 3 },
+      start: t + 0.1, dur: 0.22, color: info.accent || info.shirt, by: p,
+    };
+    darts.next = t + 1.3 + Math.random() * 0.7;
   }
 
   function runHandoff(ch, role, t) {
@@ -506,6 +549,13 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     scene.push({ y: lz.y + 65, draw: () => drawSmallTable(ctx, lz.x + 44, lz.y + 58) });
     scene.push({ y: lz.y + 88, draw: () => drawSofa(ctx, lz.x + 8, lz.y + 77, 34) });
     scene.push({ y: lz.y + 34, draw: () => drawPlant(ctx, lz.x + 6, lz.y + 14, t) });
+    const db = dartBoard();
+    scene.push({ y: db.y + 17, draw: () => drawDartboard(ctx, db.x, db.y, darts.stuck) });
+    const fl = darts.flying;
+    if (fl && t >= fl.start) {
+      const k = Math.min(1, (t - fl.start) / fl.dur);
+      overlays.push(() => drawDart(ctx, fl.from.x + (fl.to.x - fl.from.x) * k, fl.from.y + (fl.to.y - fl.from.y) * k, fl.color));
+    }
     if (Math.random() < dt * 2) spawn(lz.x + lz.w - 16, lz.y + 22, 'rgba(255,255,255,.55)', 0, -8, 1);
     const m = meetingGeo();
     scene.push({ y: m.ty + 12, draw: () => drawMeetingTable(ctx, m.tx, m.ty, m.tw) });
@@ -519,7 +569,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     }
 
     const drawChar = (ch, role, pose, seated) => () => {
-      drawPerson(ctx, ch.x, ch.y, ch.looks, { pose, t: t + ch.x, seated, walkPhase: ch.phase, outfit: ch.outfit, accent: ch.accent, sipping: pose === 'sip' && (t + ch.phase) % 6 < 1.2 });
+      drawPerson(ctx, ch.x, ch.y, ch.looks, { pose, t: t + ch.x, seated, walkPhase: ch.phase, outfit: ch.outfit, accent: ch.accent, sipping: pose === 'sip' && (t + ch.phase) % 6 < 1.2, throwing: pose === 'throw' && ch.throwUntil > t });
       if (role) drawAccessory(ctx, ch.x, ch.y, role, { seated, pose, t });
       if (ch.carry && ch.carry > t) drawFolder(ctx, ch.x, ch.y - (seated ? 19 : 22));
     };
@@ -536,6 +586,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
       let pose = 'stand';
       if (ch.walking) pose = 'walk';
       else if (ch.mode === 'coffee' || ch.mode === 'party') pose = 'sip';
+      else if (ch.mode === 'darts') pose = 'throw';
       else if (ch.mode === 'ceo') pose = 'waiting';
       else if (failed && home) pose = 'stretch';
       else if (ch.seatedNow) pose = a && home ? (a.status === 'idle' ? 'read' : a.status) : 'read';
@@ -647,6 +698,11 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
       ctx.fillStyle = '#e4defa';
       ctx.textBaseline = 'top';
       ctx.fillText(shippedHome ? 'Opgeleverd · iedereen is naar huis' : 'Iedereen is naar huis · komt terug bij nieuwe activiteit', 14, L.H - 16);
+    } else if (lullNow) {
+      ctx.font = `600 6px ${FONT}`;
+      ctx.fillStyle = '#e4defa';
+      ctx.textBaseline = 'top';
+      ctx.fillText('Rustig · het team hangt in de lounge', 14, L.H - 16);
     }
 
     // ----- information on top -----
@@ -691,6 +747,6 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     frame,
     size: () => ({ W: L.W, H: L.H }),
     isEmpty: () => ![...chars.values()].some((ch) => ch.agent),
-    debug: () => ({ chars: [...chars.values()].map(({ id, x, y, mode, path, goal, flexRole, flexIndex, hidden, walking }) => ({ id, x, y, mode, path: path.length, goal, flexRole, flexIndex, hidden, walking })), driven: [...driven.keys()], L }),
+    debug: () => ({ chars: [...chars.values()].map(({ id, x, y, mode, path, goal, flexRole, flexIndex, hidden, walking }) => ({ id, x, y, mode, path: path.length, goal, flexRole, flexIndex, hidden, walking })), driven: [...driven.keys()], L, darts: { stuck: darts.stuck.length, flying: !!darts.flying, turn: darts.turn } }),
   };
 }

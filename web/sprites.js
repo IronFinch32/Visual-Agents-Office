@@ -371,9 +371,9 @@ export function drawDesk(ctx, x, y, w, { accent, mug = false, lampOn = false, co
 
 /**
  * A person. (x, y) is the seat point when seated, the feet when standing.
- * pose: working | waiting | done | idle | stretch | walk | sip
+ * pose: working | waiting | done | idle | stretch | walk | sip | throw
  */
-export function drawPerson(ctx, x, y, looks, { pose, t = 0, seated, walkPhase = 0, outfit = 'cap', accent, sipping = false } = {}) {
+export function drawPerson(ctx, x, y, looks, { pose, t = 0, seated, walkPhase = 0, outfit = 'cap', accent, sipping = false, throwing = false } = {}) {
   const left = Math.round(x) - 5;
   const top = Math.round(y) - (seated ? 17 : 20);
   const p = (dx, dy, w, h, c) => rect(ctx, left + dx, top + dy, w, h, c);
@@ -462,6 +462,16 @@ export function drawPerson(ctx, x, y, looks, { pose, t = 0, seated, walkPhase = 
       L(9, 8, 1, 4, shirtDark);
       L(9, 11, 3, 3, '#f4f4f4');
       L(10, 11, 1, 1, '#6b3e1f');
+    }
+  } else if (pose === 'throw') {
+    // darts: aim with the hand next to the head, then the arm snaps up and forward
+    L(0, 8, 1, 6, shirtDark); L(0, 14, 1, 1, looks.skin);
+    band(0);
+    if (throwing) {
+      L(9, -3, 1, 10, shirtDark); L(9, -4, 1, 1, looks.skin);
+    } else {
+      L(9, 3, 1, 5, shirtDark); L(9, 2, 1, 1, looks.skin);
+      L(9, 0, 1, 2, '#d8d8e0'); // the dart
     }
   } else {
     L(0, 8, 1, 6, shirtDark); L(9, 8, 1, 6, shirtDark);

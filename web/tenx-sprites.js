@@ -251,6 +251,31 @@ export function drawSofa(ctx, x, y, w) {
   rect(ctx, x + 2, y + 1, w - 4, 1, '#a45d73');
 }
 
+// A dartboard on a stand; (cx, cy) is the bullseye. darts: [{ x, y, color }] stuck in the board.
+export function drawDartboard(ctx, cx, cy, darts = []) {
+  const x = Math.round(cx), y = Math.round(cy);
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(x, y + 17, 6, 1.5, 0, 0, Math.PI * 2); ctx.fill();
+  rect(ctx, x - 1, y + 5, 2, 12, '#6b4a2b'); // pole
+  rect(ctx, x - 5, y + 16, 10, 1, '#4f3520'); // feet
+  rect(ctx, x - 7, y - 7, 14, 14, '#5a3d24'); // backboard
+  const rings = [[6, '#1b1b22'], [5, '#c0392b'], [4, '#efe4c8'], [3, '#2e8b57'], [2, '#efe4c8'], [1, '#c0392b']];
+  for (const [r, c] of rings) {
+    ctx.fillStyle = c;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  rect(ctx, x, y, 1, 1, '#ff4d5e');
+  for (const d of darts) drawDart(ctx, d.x, d.y, d.color);
+}
+
+// A dart: the point at (x, y), flight pointing down towards the thrower.
+export function drawDart(ctx, x, y, color = '#4ea3ff') {
+  const px = Math.round(x), py = Math.round(y);
+  rect(ctx, px, py, 1, 1, '#d8d8e0');
+  rect(ctx, px, py + 1, 1, 2, '#3a3a44');
+  rect(ctx, px - 1, py + 3, 3, 1, color);
+}
+
 export function drawMiniDesk(ctx, x, y) {
   ctx.fillStyle = 'rgba(0,0,0,.2)';
   ctx.beginPath(); ctx.ellipse(x + 8, y + 9, 9, 2, 0, 0, Math.PI * 2); ctx.fill();

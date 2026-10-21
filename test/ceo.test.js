@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createState, applyEvent, snapshot, assignRooms } from '../server/state.js';
+import { createState, applyEvent, snapshot, assignRooms, prune, STALE_MS, CEO_STALE_MS } from '../server/state.js';
 import { isCeoSkill, isCeoPrompt, isPlusSignal, createTenx } from '../server/tenx.js';
 import { nodeFs, createServer } from '../server/server.js';
 
@@ -124,4 +124,24 @@ test('server snapshot: CEO floor, rooms per work session, and the room goes on S
   } finally {
     server.close();
   }
+});
+
+test('the CEO session survives a long wait; a normal session is still pruned (ADR-010)', () => {
+  const st = createState();
+  applyEvent(st, skill('c', '/u/Projects', '10x-Team-Plus:ceo'), 1);
+  applyEvent(st, { session_id: 'w', cwd: '/u/app', hook_event_name: 'SessionStart' }, 1);
+  assert.equal(prune(st, 1 + STALE_MS + 1), true);
+  assert.equal(st.agents.has('w'), false, 'normal session pruned after 30 min');
+  assert.equal(st.agents.has('c'), true, 'CEO session kept after 30 min');
+  assert.equal(prune(st, 1 + CEO_STALE_MS - 1), false);
+  assert.equal(st.agents.has('c'), true);
+  assert.equal(prune(st, 1 + CEO_STALE_MS + 1), true);
+  assert.equal(st.agents.has('c'), false, 'safety net after 12 h');
+});
+
+test('the CEO session still leaves on SessionEnd', () => {
+  const st = createState();
+  applyEvent(st, skill('c', '/u/Projects', '10x-Team-Plus:ceo'), 1);
+  applyEvent(st, { session_id: 'c', cwd: '/u/Projects', hook_event_name: 'SessionEnd' }, 2);
+  assert.equal(st.agents.has('c'), false);
 });
