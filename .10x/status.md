@@ -248,8 +248,8 @@
 
 # Status — one-company
 
-- [ ] Phase 0: Brainstorming
-- [ ] Phase 1: Strategy
+- [x] Phase 0: Brainstorming
+- [x] Phase 1: Strategy
 - [ ] Phase 2: Experience Design
 - [ ] Phase 3: Design
 - [ ] Phase 4: Planning
@@ -259,3 +259,4 @@
 
 ## Progress
 - Idee van de CEO: één bedrijf met afdelingen in plaats van een heel bedrijf per sessie; sessies lopen van afdeling naar afdeling.
+- Gebruiker koos: vaste medewerkers + projectmappen, Flexwerkplek voor gewone sessies. Spec `specs/2026-10-21-one-company-design.md` goedgekeurd.

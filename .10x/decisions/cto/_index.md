@@ -12,3 +12,4 @@
 - [no-directie](no-directie.md)
 - [lounge-pool](lounge-pool.md) — pooltafel in de lounge (sfeer)
 - [session-sync](session-sync.md) — reminder-hook in plugin, kantoor blijft read-only
+- [one-company](one-company.md) — één bedrijf, departments.json-contract, oude weergave legacy

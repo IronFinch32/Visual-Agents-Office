@@ -12,3 +12,4 @@
 - [no-directie](no-directie.md)
 - [lounge-pool](lounge-pool.md) — pooltafel: speelbaar cosmetisch potje
 - [session-sync](session-sync.md) — verse/bevroren stand per sessie, juiste rol, hook
+- [one-company](one-company.md) — één bedrijf met afdelingen, projectmappen, collega's
