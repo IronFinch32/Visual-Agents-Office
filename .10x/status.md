@@ -174,9 +174,9 @@
 - [x] Phase 2: Experience Design — skipped (geen nieuwe UI; gedrag server-side)
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
+- [x] Phase 5: Implementation
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
 
 ## Diagnose
 - CEO-sessie 07ea0ca2 houdt sinds 09:18 hetzelfde id; service draait sinds 13:35 zonder herstart.
@@ -185,6 +185,13 @@
 
 ## Progress
 - Gebruiker koos: CEO blijft bij stilzetten; alleen /clear of uitloggen haalt haar weg (ADR-013).
-- [ ] T1 state.js SessionEnd-tak + tests
-- [ ] T2 README bijwerken
-- [ ] T3 npm test, service herstarten, live check
+- [x] T1 state.js SessionEnd-tak + tests
+- [x] T2 README bijwerken — vervalt (README beschrijft dit niet)
+- [x] T3 npm test, service herstarten, live check
+- Code: commit 0a1dc09 · tests 75/75
+
+## Verification
+- QA en security goedgekeurd — `reviews/2026-10-21-ceo-sessionend-*.md`
+
+## Delivery
+- Service herstart 2026-10-21 14:16; live zelftest geslaagd. De open CEO-sessie verschijnt weer bij haar volgende `/10x-Team-Plus:ceo` en blijft daarna ook als de app haar stilzet.

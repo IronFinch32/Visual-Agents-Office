@@ -1,3 +1,4 @@
 # Handoff — ceo-sessionend
 
-**Status:** Phase 4 klaar, ADR-013. SDE: `server/state.js` SessionEnd-tak voor CEO-sessies (zie senior-engineer/ceo-sessionend.md), tests in `test/ceo.test.js`.
+**Status:** opgeleverd (Phase 7), commit 0a1dc09, ADR-013.
+- Oorzaak: de app zet een stille CEO-sessie stil (SessionEnd) en hervat haar met hetzelfde id; de server wiste de CEO daarbij. Nu blijft ze, behalve bij /clear of logout. Runbook: `decisions/sre/ceo-sessionend.md`. Rollback: `git revert 0a1dc09`.
