@@ -1,1 +1,1 @@
-{ "role": "engineering-manager", "phase": 4, "phaseName": "Planning", "feature": "ceo-floor", "task": "Taken opknippen", "updatedAt": "2026-10-21T07:20:47Z" }
+{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "ceo-floor", "task": "T1: CEO-herkenning en valkuilen in tenx.js", "updatedAt": "2026-10-21T07:21:05Z" }
