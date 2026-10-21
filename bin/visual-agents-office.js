@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { createServer } from '../server/server.js';
+import { createServer, fileCeoStore } from '../server/server.js';
 import { existsSync } from 'node:fs';
 import { TARGETS, hooksInstalled, updateSettings, detectTools, defaultChoice, parseToolChoice } from '../hooks/install.js';
 import { enableAutostart, disableAutostart } from '../service/autostart.js';
@@ -125,7 +125,7 @@ async function start() {
     if (!args.includes('--no-open')) openBrowser(url);
     return;
   }
-  const { server } = createServer({ debug: process.env.VAO_DEBUG === '1' });
+  const { server } = createServer({ debug: process.env.VAO_DEBUG === '1', ceoStore: fileCeoStore() });
   server.on('error', (err) => {
     console.error(err.code === 'EADDRINUSE' ? `Poort ${port} is al in gebruik door een ander programma. Kies een andere met --port.` : err.message);
     process.exit(1);

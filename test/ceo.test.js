@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createState, applyEvent, snapshot, assignRooms, prune, STALE_MS, CEO_STALE_MS } from '../server/state.js';
+import { createState, applyEvent, snapshot, assignRooms, prune, STALE_MS, CEO_STALE_MS, ceoSnapshot, restoreCeo } from '../server/state.js';
 import { isCeoSkill, isCeoPrompt, isPlusSignal, createTenx } from '../server/tenx.js';
-import { nodeFs, createServer } from '../server/server.js';
+import { nodeFs, createServer, fileCeoStore } from '../server/server.js';
 
 const skill = (session_id, cwd, name) => ({ session_id, cwd, hook_event_name: 'PreToolUse', tool_name: 'Skill', tool_input: { skill: name } });
 const prompt = (session_id, cwd, text) => ({ session_id, cwd, hook_event_name: 'UserPromptSubmit', prompt: text });
@@ -144,4 +144,59 @@ test('the CEO session still leaves on SessionEnd', () => {
   applyEvent(st, skill('c', '/u/Projects', '10x-Team-Plus:ceo'), 1);
   applyEvent(st, { session_id: 'c', cwd: '/u/Projects', hook_event_name: 'SessionEnd' }, 2);
   assert.equal(st.agents.has('c'), false);
+});
+
+test('CEO sessions round-trip through ceoSnapshot/restoreCeo; junk and old entries are ignored (ADR-011)', () => {
+  const st = createState();
+  applyEvent(st, skill('c', '/u/Projects', '10x-Team-Plus:ceo'), 1000);
+  applyEvent(st, { session_id: 'w', cwd: '/u/app', hook_event_name: 'SessionStart' }, 1000);
+  const saved = ceoSnapshot(st);
+  assert.deepEqual(saved.map((a) => a.id), ['c']);
+
+  const fresh = createState();
+  assert.equal(restoreCeo(fresh, [...saved, null, { id: 5 }, { id: 'old', updatedAt: 0 }, 'x'], 1000 + CEO_STALE_MS - 1), true);
+  assert.equal(fresh.ceoSeen, true);
+  assert.deepEqual([...fresh.agents.keys()], ['c']);
+  const c = fresh.agents.get('c');
+  assert.equal(c.ceo, true);
+  assert.equal(c.cwd, '/u/Projects');
+  assert.equal(c.status, 'idle', 'working is not restored');
+  assert.deepEqual(assignRooms(snapshot(fresh)).map((a) => a.room), ['ceo']);
+
+  assert.equal(restoreCeo(createState(), 'garbage'), false);
+  assert.equal(restoreCeo(createState(), saved, 1000 + CEO_STALE_MS + 1), false, 'too old');
+});
+
+test('the server remembers the CEO across a restart and forgets it on SessionEnd (ADR-011)', async () => {
+  const { ceoDir, app } = fixture();
+  const file = join(mkdtempSync(join(tmpdir(), 'vao-ceo-')), 'ceo.json');
+  const start = async () => {
+    const { server } = createServer({ projectRoot: (cwd) => cwd, ceoStore: fileCeoStore(file) });
+    await new Promise((r) => server.listen(0, '127.0.0.1', r));
+    const base = `http://127.0.0.1:${server.address().port}`;
+    return {
+      server,
+      post: (evt) => fetch(`${base}/event`, { method: 'POST', body: JSON.stringify(evt) }),
+      state: async () => (await fetch(`${base}/api/state`)).json(),
+    };
+  };
+  let o = await start();
+  try {
+    await o.post(prompt('c', ceoDir, '/10x-Team-Plus:ceo Bouw een webshop'));
+  } finally { o.server.close(); }
+
+  o = await start();
+  try {
+    await o.post({ session_id: 'w1', cwd: app, hook_event_name: 'SessionStart' });
+    const s = await o.state();
+    const room = Object.fromEntries(s.agents.map((a) => [a.id, a.room]));
+    assert.deepEqual(room, { c: 'ceo', w1: 'session:w1' }, 'floor is back without a new CEO skill call');
+    await o.post({ session_id: 'c', hook_event_name: 'SessionEnd' });
+  } finally { o.server.close(); }
+
+  o = await start();
+  try {
+    const s = await o.state();
+    assert.deepEqual(s.agents, [], 'gone after SessionEnd');
+  } finally { o.server.close(); }
 });

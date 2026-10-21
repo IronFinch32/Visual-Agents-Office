@@ -283,6 +283,43 @@ export function snapshot(state) {
   return [...state.agents.values()].map(({ pendingSubagentTask, ...a }) => a);
 }
 
+// Fields of a CEO session that survive a restart (ADR-011).
+const CEO_FIELDS = ['id', 'name', 'cwd', 'projectKey', 'project', 'task', 'activity', 'status', 'startedAt', 'updatedAt', 'statusSince', 'source'];
+
+/** The CEO sessions as plain objects, to remember across a restart (ADR-011). */
+export function ceoSnapshot(state) {
+  return [...state.agents.values()]
+    .filter((a) => a.kind === 'session' && a.ceo)
+    .map((a) => Object.fromEntries(CEO_FIELDS.map((k) => [k, a[k]])));
+}
+
+/**
+ * Put remembered CEO sessions back after a restart (ADR-011). Ignores anything malformed or older than
+ * CEO_STALE_MS; a session that was working is shown idle until it sends something again.
+ */
+export function restoreCeo(state, saved, now = Date.now()) {
+  if (!Array.isArray(saved)) return false;
+  let restored = false;
+  for (const s of saved) {
+    if (!s || typeof s.id !== 'string' || !s.id || typeof s.updatedAt !== 'number' || now - s.updatedAt > CEO_STALE_MS) continue;
+    if (state.agents.has(s.id)) continue;
+    const str = (v, max) => truncate(typeof v === 'string' ? v : '', max);
+    const path = (v) => (typeof v === 'string' ? v.slice(0, 4096) : '');
+    const num = (v) => (typeof v === 'number' ? v : s.updatedAt);
+    state.agents.set(s.id, {
+      id: s.id, sessionId: s.id, parentId: null, kind: 'session', ceo: true,
+      name: str(s.name, LIMITS.name) || 'sessie', cwd: path(s.cwd), projectKey: path(s.projectKey) || 'unknown', project: str(s.project, LIMITS.name),
+      task: str(s.task, LIMITS.task), activity: '', waitingReason: '',
+      status: ['waiting', 'done', 'idle'].includes(s.status) ? s.status : 'idle',
+      startedAt: num(s.startedAt), updatedAt: s.updatedAt, statusSince: num(s.statusSince),
+      source: s.source === 'codex' ? 'codex' : 'claude',
+    });
+    restored = true;
+  }
+  if (restored) state.ceoSeen = true;
+  return restored;
+}
+
 /**
  * Which room each agent is drawn in (ADR-009): the CEO session and its subagents on the CEO floor,
  * a session in a 10x project its own room once a CEO has been seen, everything else per project.

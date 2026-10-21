@@ -1,9 +1,10 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, renameSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { extname, join, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createState, applyEvent, prune, snapshot, assignRooms } from './state.js';
+import { createState, applyEvent, prune, snapshot, assignRooms, ceoSnapshot, restoreCeo } from './state.js';
 import { createTenx } from './tenx.js';
 
 const WEB_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'web');
@@ -57,11 +58,54 @@ export const nodeFs = {
   },
 };
 
-export function createServer({ debug = false, projectRoot = gitRootResolver(), fs = nodeFs } = {}) {
+// Where the CEO session is remembered across a restart (ADR-011).
+export const CEO_FILE = join(homedir(), '.visual-agents-office', 'ceo.json');
+
+export function fileCeoStore(file = CEO_FILE) {
+  return {
+    load: () => {
+      try {
+        if (statSync(file).size > 64 * 1024) return [];
+        return JSON.parse(readFileSync(file, 'utf8'));
+      } catch {
+        return [];
+      }
+    },
+    save: (list) => {
+      try {
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(`${file}.tmp`, JSON.stringify(list), { mode: 0o600 });
+        renameSync(`${file}.tmp`, file);
+      } catch { /* best effort: the office works without it */ }
+    },
+  };
+}
+
+export function createServer({ debug = false, projectRoot = gitRootResolver(), fs = nodeFs, ceoStore = null } = {}) {
   const state = createState({ projectRoot });
   const tenx = createTenx({ fs });
   const clients = new Set();
   let pending = null;
+
+  // Remember the CEO session (ADR-011): restore on start, save when it changes (updatedAt at most once a minute).
+  let savedCeo = '';
+  let savedAt = 0;
+  if (ceoStore) {
+    restoreCeo(state, ceoStore.load(), Date.now());
+    const list = ceoSnapshot(state);
+    savedCeo = JSON.stringify(list.map(({ updatedAt, ...rest }) => rest));
+    savedAt = Math.max(0, ...list.map((a) => a.updatedAt));
+  }
+  function persistCeo() {
+    if (!ceoStore) return;
+    const list = ceoSnapshot(state);
+    const key = JSON.stringify(list.map(({ updatedAt, ...rest }) => rest));
+    const latest = Math.max(0, ...list.map((a) => a.updatedAt));
+    if (key === savedCeo && latest - savedAt < 60_000) return;
+    savedCeo = key;
+    savedAt = latest;
+    ceoStore.save(list);
+  }
 
   function fullSnapshot() {
     const agents = snapshot(state);
@@ -115,7 +159,7 @@ export function createServer({ debug = false, projectRoot = gitRootResolver(), f
     if (debug) console.log('[event]', evt.hook_event_name, evt.session_id, evt.agent_id || '', evt.tool_name || '');
     let changed = applyEvent(state, evt, Date.now());
     if (evt && evt.session_id && tenx.onEvent(evt, state.agents.get(String(evt.session_id)))) changed = true;
-    if (changed) broadcast();
+    if (changed) { broadcast(); persistCeo(); }
     res.writeHead(204).end();
   }
 
@@ -163,7 +207,7 @@ export function createServer({ debug = false, projectRoot = gitRootResolver(), f
   });
 
   const timers = [
-    setInterval(() => { if (prune(state, Date.now()) | tenx.tick()) broadcast(); }, 5_000),
+    setInterval(() => { if (prune(state, Date.now()) | tenx.tick()) { broadcast(); persistCeo(); } }, 5_000),
     setInterval(() => { for (const res of clients) res.write(': ping\n\n'); }, 15_000),
   ];
   timers.forEach((t) => t.unref());
@@ -177,7 +221,7 @@ export function createServer({ debug = false, projectRoot = gitRootResolver(), f
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const port = Number(process.env.VAO_PORT) || 4747;
-  const { server } = createServer({ debug: process.env.VAO_DEBUG === '1' });
+  const { server } = createServer({ debug: process.env.VAO_DEBUG === '1', ceoStore: fileCeoStore() });
   server.on('error', (err) => {
     console.error(err.code === 'EADDRINUSE' ? `Poort ${port} is al in gebruik. Draait het kantoor al?` : err.message);
     process.exit(1);
