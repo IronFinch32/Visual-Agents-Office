@@ -116,4 +116,4 @@
 - QA, security en design goedgekeurd — `reviews/2026-10-21-team-lounge-darts-*.md`
 
 ## Delivery
-- Klaar voor gebruik; LaunchAgent nog niet herstart (wist het CEO-kenmerk van de lopende sessie). Herstart: `launchctl kickstart -k gui/$(id -u)/com.visualagentsoffice`
+- Service herstart (launchctl kickstart), :4747 serveert de nieuwe code — 2026-10-21
