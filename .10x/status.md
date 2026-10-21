@@ -150,12 +150,19 @@
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
+- [x] Phase 5: Implementation
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
 
 ## Progress
 - Gebruiker: Directie-zone altijd weg uit teamkamers; CEO komt op bezoek bij stand-up/feest (ADR-012).
-- [ ] T1 tenx-room.js: lay-out, wachtrij bij de deur, CEO-meubilair weg, CEO-bezoek
-- [ ] T2 README bijwerken
-- [ ] T3 npm test + browsercheck, service herstarten
+- [x] T1 tenx-room.js: lay-out, wachtrij bij de deur, CEO-meubilair weg, CEO-bezoek
+- [x] T2 README bijwerken
+- [x] T3 npm test + browsercheck, service herstarten
+- Code: commit d693082 · tests 74/74
+
+## Verification
+- QA, security en design goedgekeurd — `reviews/2026-10-21-no-directie-*.md`
+
+## Delivery
+- Webbestanden live via de draaiende service (:4747), geen herstart nodig — 2026-10-21

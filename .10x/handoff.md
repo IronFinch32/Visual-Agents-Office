@@ -1,4 +1,4 @@
 # Handoff — no-directie
 
-**Status:** Phase 4 klaar → SDE. ADR-012, spec `specs/2026-10-21-no-directie-design.md`.
-- Taken: T1 `web/tenx-room.js` (zone `ceo` weg, lounge [3,1,2], queue bij de deur, CEO start away en bezoekt bij stand-up/feest), T2 README, T3 test + browsercheck + service-herstart.
+**Status:** opgeleverd (Phase 7), commit d693082, ADR-012.
+- Teamkamers hebben geen Directie meer; de CEO komt op bezoek bij stand-up en feest. Runbook: `decisions/sre/no-directie.md`. Rollback: `git revert d693082`.
