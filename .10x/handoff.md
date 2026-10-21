@@ -1,8 +1,6 @@
 # Handoff — ceo-floor
 
-**Van:** brainstorm (CEO-sessie) **Naar:** CTO + PM (Phase 1)
+**Van:** CTO + PM (Phase 1) **Naar:** UX + UI (Phase 2)
 
-- Spec: `.10x/specs/2026-10-21-ceo-floor-design.md` — goedgekeurd (CEO-verdieping boven alle kamers, één kamer per 10x-werksessie, kamer blijft tot SessionEnd).
-- 10x-Team-Plus bouwt parallel de skill `10x-Team-Plus:ceo`; houd je aan het *Contract* in de spec. Test met een demo-CEO, niet met de echte skill.
-- Let op de twee valkuilen in `server/tenx.js` (regel 41 en 282) die in de spec staan.
-- Na oplevering: service herstarten (`launchctl kickstart -k gui/$(id -u)/com.visualagentsoffice`).
+- Verdict build; scope en stories in `decisions/product-manager/ceo-floor.md`.
+- UX/UI: de flows en het beeld staan al in de goedgekeurde spec (`specs/2026-10-21-ceo-floor-design.md`); werk ze uit tot een layout van de verdieping en het gedrag van de teamkamer zonder directiekamer.
