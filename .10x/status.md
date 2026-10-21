@@ -61,3 +61,18 @@
 
 ## Progress
 - Approved in chat: active.json reader + phase fix, step 1 (CEO office, flex desks, pathfinding, handoff, stand-up, lounge life), step 2 (party, failures, thinking, workload, kanban, end of day).
+
+# Status — ceo-floor
+
+- [x] Phase 0: Brainstorming
+- [ ] Phase 1: Strategy
+- [ ] Phase 2: Experience Design
+- [ ] Phase 3: Design
+- [ ] Phase 4: Planning
+- [ ] Phase 5: Implementation
+- [ ] Phase 6: Verification
+- [ ] Phase 7: Delivery
+
+## Progress
+- Spec goedgekeurd: `.10x/specs/2026-10-21-ceo-floor-design.md`
+- Repo verhuisd naar `~/Documents/Claude Projects/Visual Agents Office`; LaunchAgent aangepast en service herstart (2026-10-21)
