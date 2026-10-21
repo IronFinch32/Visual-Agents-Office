@@ -6,6 +6,7 @@ import { extname, join, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createState, applyEvent, prune, snapshot, assignRooms, ceoSnapshot, restoreCeo } from './state.js';
 import { createTenx } from './tenx.js';
+import { departmentsSource } from './departments.js';
 
 const WEB_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'web');
 const MAX_BODY = 256 * 1024;
@@ -81,7 +82,10 @@ export function fileCeoStore(file = CEO_FILE) {
   };
 }
 
-export function createServer({ debug = false, projectRoot = gitRootResolver(), fs = nodeFs, ceoStore = null } = {}) {
+export function createServer({
+  debug = false, projectRoot = gitRootResolver(), fs = nodeFs, ceoStore = null,
+  departments = departmentsSource({ home: homedir(), readText: fs.readText }),
+} = {}) {
   const state = createState({ projectRoot });
   const tenx = createTenx({ fs });
   const clients = new Set();
@@ -112,7 +116,7 @@ export function createServer({ debug = false, projectRoot = gitRootResolver(), f
     const ceoIds = new Set(agents.filter((a) => a.ceo).map((a) => a.id));
     const tx = tenx.snapshot(new Set(agents.filter((a) => !ceoIds.has(a.sessionId)).map((a) => a.projectKey)));
     assignRooms(agents, { ceoSeen: state.ceoSeen, isTenx: (k) => !!tx[k] });
-    return { agents, tenx: tx, now: Date.now() };
+    return { agents, tenx: tx, departments: departments(), now: Date.now() };
   }
 
   function send(res) {
