@@ -1,1 +1,1 @@
-{ "role": "qa", "phase": 6, "phaseName": "Verification", "feature": "ceo-floor", "task": "Testplan en regressie CEO-verdieping", "updatedAt": "2026-10-21T11:02:02Z" }
+{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "ceo-floor", "task": "Service herstarten en controleren", "updatedAt": "2026-10-21T11:02:39Z" }

@@ -11,3 +11,4 @@
 - [codex-support](codex-support.md)
 - [tenx-mode](tenx-mode.md)
 - [living-office](living-office.md)
+- [ceo-floor](ceo-floor.md)

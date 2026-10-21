@@ -70,7 +70,7 @@
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
 - [x] Phase 5: Implementation
-- [ ] Phase 6: Verification
+- [x] Phase 6: Verification
 - [ ] Phase 7: Delivery
 
 ## Progress
@@ -83,3 +83,7 @@
 - [x] T5 Client: tenx-room setFloor
 - [x] T6 Demo VAO_DEMO_10X=ceo + visuele controle
 - Tests 70/70 (`npm test`, 7 nieuw in `test/ceo.test.js`); demo `VAO_DEMO_10X=ceo` visueel gecontroleerd op :4848
+
+## Verification
+- QA approved (70/70, demo), security approved, design approved — `reviews/2026-10-21-ceo-floor-*.md`
+- Release-ready; echte CEO-run in de app volgt na `ceo-mode`
