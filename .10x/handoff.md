@@ -1,7 +1,6 @@
 # Handoff — ceo-floor
 
-**Van:** UX + UI (Phase 2) **Naar:** Architect + Staff (Phase 3)
+**Van:** Architect + Staff (Phase 3) **Naar:** EM + Senior (Phase 4)
 
-- Layout en states: `decisions/ux-designer/ceo-floor.md`, maten/sprites: `decisions/ui-designer/ceo-floor.md`.
-- Data per scherm: verdieping heeft de CEO-agent, per werksessie (project, feature, fase/naam, complete, wacht ja/nee) en de kamersleutel om te focussen. Teamkamer heeft een vlag "er is een CEO-verdieping".
-- Let op de twee valkuilen in `server/tenx.js` (skill-regex en prompt-regex).
+- ADR-009 (`adrs/009-ceo-floor-and-session-rooms.md`): CEO-herkenning in state, `agent.room` via `assignRooms`, `tenx.onEvent` slaat CEO over, nieuwe `web/ceo-floor.js`, `setFloor` in teamkamers.
+- Componenten en faalwijzen: `decisions/architect/ceo-floor.md`.

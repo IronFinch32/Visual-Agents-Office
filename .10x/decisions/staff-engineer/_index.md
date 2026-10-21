@@ -8,3 +8,4 @@
 - [visual-agents-office](visual-agents-office.md)
 - [project-offices](project-offices.md) — ADR-002
 - [office-polish](office-polish.md)
+- [ceo-floor](ceo-floor.md)

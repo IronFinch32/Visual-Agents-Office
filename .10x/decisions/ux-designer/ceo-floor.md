@@ -24,7 +24,7 @@ De gebruiker (CEO) kijkt naast zijn CEO-chat naar het kantoor. Kerntaak: "welke 
 ## States
 - Bord leeg: "Nog geen werksessies". Meer dan 5 regels: eerste 5 + "+N".
 - CEO werkt: ballon met activiteit; denkt na: denkwolk; wacht op jou: rode ballon met de vraag; klaar: ✓.
-- CEO-sessie weg (SessionEnd): verdieping weg, teamkamers krijgen hun directiekamer niet terug zolang ze per sessie zijn — wel lounge-indeling terug naar normaal (verdieping bestaat niet meer).
+- CEO-sessie weg (SessionEnd): verdieping weg; teamkamers blijven per sessie (CEO heeft bestaan) maar krijgen hun directiekamer terug, want die verdwijnt alleen zolang er een verdieping is.
 
 ## Toegankelijkheid
 Canvas is decoratief; het zijpaneel blijft de tekstuele bron. Verdieping-canvas krijgt `aria-label` "CEO-verdieping". Bordregels zijn ook als title/tooltip-tekst in het paneel terug te vinden (projectkoppen). Reduced motion: de bestaande FLIP-animatie respecteert dit al.
