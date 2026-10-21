@@ -7,3 +7,4 @@
 - [autostart](autostart.md)
 - [living-office](living-office.md)
 - [ceo-floor](ceo-floor.md)
+- [team-lounge-darts](team-lounge-darts.md)

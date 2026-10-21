@@ -1,1 +1,1 @@
-{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "team-lounge-darts", "task": "CEO-uitzondering in prune", "updatedAt": "2026-10-21T11:20:40Z" }
+{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "team-lounge-darts", "task": "Opgeleverd, herstart service wanneer het uitkomt", "updatedAt": "2026-10-21T11:30:00Z" }

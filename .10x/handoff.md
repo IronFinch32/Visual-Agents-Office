@@ -1,4 +1,6 @@
 # Handoff — team-lounge-darts
 
-Spec: `specs/2026-10-21-team-lounge-darts-design.md` · ADR-010.
-Taken T1–T5 (zie `decisions/engineering-manager/team-lounge-darts.md`), aanpak per taak in `decisions/senior-engineer/team-lounge-darts.md`.
+**Status:** opgeleverd (Phase 7), code in commit e825729, ADR-010.
+
+- Runbook: `decisions/sre/team-lounge-darts.md`; rollback: `decisions/devops/team-lounge-darts.md`.
+- Live zetten: `launchctl kickstart -k gui/$(id -u)/com.visualagentsoffice` (bewust nog niet gedaan: wist het CEO-kenmerk van de lopende CEO-sessie).

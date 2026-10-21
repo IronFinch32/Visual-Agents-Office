@@ -7,3 +7,4 @@ No database in this project (in-memory state by design, ADR-001).
 - [project-offices](project-offices.md)
 - [office-polish](office-polish.md)
 - [ceo-floor](ceo-floor.md)
+- [team-lounge-darts](team-lounge-darts.md)

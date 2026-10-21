@@ -99,14 +99,21 @@
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
+- [x] Phase 5: Implementation
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
 
 ## Progress
 - Spec goedgekeurd: `.10x/specs/2026-10-21-team-lounge-darts-design.md` · ADR-010
-- [ ] T1 Server: CEO-uitzondering in prune + tests
-- [ ] T2 Sprites: dartbord, pijl, throw-pose
-- [ ] T3 Kamer: koffie vaker, stille lounge-rotatie, 60 min naar huis
-- [ ] T4 Kamer: darts
-- [ ] T5 Visuele controle + npm test
+- [x] T1 Server: CEO-uitzondering in prune + tests
+- [x] T2 Sprites: dartbord, pijl, throw-pose
+- [x] T3 Kamer: koffie vaker, stille lounge-rotatie, 60 min naar huis
+- [x] T4 Kamer: darts
+- [x] T5 Visuele controle + npm test
+- Code: commit e825729 · tests 72/72
+
+## Verification
+- QA, security en design goedgekeurd — `reviews/2026-10-21-team-lounge-darts-*.md`
+
+## Delivery
+- Klaar voor gebruik; LaunchAgent nog niet herstart (wist het CEO-kenmerk van de lopende sessie). Herstart: `launchctl kickstart -k gui/$(id -u)/com.visualagentsoffice`
