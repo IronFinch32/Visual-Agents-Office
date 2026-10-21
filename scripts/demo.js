@@ -1,6 +1,7 @@
 // Simulates a few Claude Code sessions with subagent teams so you can try the office without real agents.
 // Usage: npm run demo   (server must be running)
 import { runTenxDemo } from './demo-10x.js';
+import { runCeoDemo } from './demo-ceo.js';
 
 const port = Number(process.env.VAO_PORT) || 4747;
 const url = `http://127.0.0.1:${port}/event`;
@@ -31,6 +32,13 @@ const sub = (id, type) => ({ agent_id: id, agent_type: type });
 async function spawn(s, id, type, description) {
   await tool(s, 'Agent', { subagent_type: type, description });
   await ev(s, 'SubagentStart', sub(id, type));
+}
+
+// VAO_DEMO_10X=ceo: only the CEO scenario (ADR-009): a CEO floor and a room per work session.
+if (process.env.VAO_DEMO_10X === 'ceo') {
+  await runCeoDemo(send);
+  console.log('CEO-demo klaar.');
+  process.exit(0);
 }
 
 // The /10x-team run happens in parallel in its own department office.

@@ -1,6 +1,8 @@
 // The building: one room per project, laid out to fit the screen, with click-to-focus.
+// With a CEO session (ADR-009) a CEO floor spans the top and every 10x work session has its own room.
 import { createRoom } from './room.js';
 import { createTenxRoom } from './tenx-room.js';
+import { createCeoFloor } from './ceo-floor.js';
 import { DEPTS, phasesFor } from './tenx-sprites.js';
 import { timePhase } from './sprites.js';
 
@@ -13,6 +15,8 @@ const HEADER_H = 30; // room header + borders, in CSS px
 const BORDER = 6;
 
 const STATUS_ICON = { waiting: '!', working: '●', done: '✓', idle: 'z' };
+const FLOOR = 'ceo';
+const FLOOR_MAX_SHARE = 0.3; // of the building height
 
 function el(tag, cls, text) {
   const n = document.createElement(tag);
@@ -21,31 +25,56 @@ function el(tag, cls, text) {
   return n;
 }
 
+/** Board line on the CEO floor: "Phase 3 Design" or SHIPPED. */
+function phaseText(tx) {
+  if (tx.complete) return 'SHIPPED';
+  if (tx.phase == null) return 'Phase ?';
+  const name = tx.active?.phaseName || DEPTS[phasesFor(tx.flavor).depts[tx.phase]]?.label || '';
+  return `Phase ${tx.phase} ${name}`.trim();
+}
+
 export function createBuilding(container, { banner, backButton, onRoleClick } = {}) {
-  const rooms = new Map(); // projectKey -> { el, room, title, counts, name, waiting }
-  const order = [];
+  const rooms = new Map(); // room key -> { el, room, title, counts, name, projectKey, waiting }
+  const order = []; // team rooms; the CEO floor is laid out on its own
   let present = new Set();
   let focusKey = null;
   let last = performance.now();
 
-  function makeRoom(key, name) {
-    const section = el('section', 'room');
+  function makeRoom(key, name, projectKey) {
+    const floor = key === FLOOR;
+    const section = el('section', floor ? 'room floor' : 'room');
     section.dataset.key = key;
-    section.title = key;
+    section.title = floor ? 'CEO-verdieping' : projectKey;
     const header = el('header');
-    const title = el('span', 'room-title', name);
+    const title = el('span', 'room-title', floor ? 'CEO-verdieping' : name);
     const counts = el('span', 'room-counts');
     header.append(title, counts);
     const canvas = el('canvas');
-    canvas.setAttribute('aria-label', `Kantoor ${name}`);
+    canvas.setAttribute('aria-label', floor ? 'CEO-verdieping' : `Kantoor ${name}`);
     section.append(header, canvas);
     section.addEventListener('click', () => focus(focusKey === key ? null : key));
-    container.append(section);
-    const entry = { el: section, canvas, room: createRoom(canvas, { phase }), title, counts, name, waiting: false };
+    const entry = { el: section, canvas, title, counts, name: floor ? 'CEO' : name, projectKey, waiting: false };
+    if (floor) {
+      // The floor sits on top, on a row of its own.
+      entry.extra = el('div', 'floor-break');
+      container.prepend(section, entry.extra);
+      entry.room = createCeoFloor(canvas, { phase, onFocus: (k) => focus(k) });
+    } else {
+      container.append(section);
+      entry.room = createRoom(canvas, { phase });
+      order.push(key);
+    }
     rooms.set(key, entry);
-    order.push(key);
     return entry;
   }
+
+  const removeRoom = (key) => {
+    const r = rooms.get(key);
+    r.el.remove();
+    r.extra?.remove();
+    rooms.delete(key);
+    if (order.includes(key)) order.splice(order.indexOf(key), 1);
+  };
 
   // A project in 10x mode gets the department office; switching type swaps the canvas.
   function ensureType(key, r, wantTenx) {
@@ -55,34 +84,51 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
     r.canvas.replaceWith(canvas);
     r.canvas = canvas;
     r.room = wantTenx
-      ? createTenxRoom(canvas, { phase, onRoleClick: (role) => onRoleClick?.(key, role) })
+      ? createTenxRoom(canvas, { phase, onRoleClick: (role) => onRoleClick?.(r.projectKey, role) })
       : createRoom(canvas, { phase });
   }
 
   function setAgents(list, serverNow, tenx = {}) {
     const groups = new Map();
     for (const a of list) {
-      const key = a.projectKey || 'unknown';
+      const key = a.room || a.projectKey || 'unknown';
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(a);
     }
     present = new Set(groups.keys());
+    const hadFloor = rooms.has(FLOOR);
     for (const [key, group] of groups) {
+      const projectKey = group[0].projectKey || key;
       const name = group.find((a) => a.project)?.project || key;
-      if (!rooms.has(key)) makeRoom(key, name);
+      if (!rooms.has(key)) {
+        makeRoom(key, name, projectKey);
+        // the CEO hands a new work session its folder
+        if (hadFloor && key.startsWith('session:')) rooms.get(FLOOR).room.handoff();
+      }
+      rooms.get(key).projectKey = projectKey;
     }
+    const floorOn = present.has(FLOOR);
+    const board = [];
     for (const [key, r] of rooms) {
       const group = groups.get(key) || [];
-      ensureType(key, r, !!tenx[key]);
+      if (key === FLOOR) { r.room.setAgents(group, serverNow); continue; }
+      const tx = tenx[r.projectKey];
+      ensureType(key, r, !!tx);
       r.room.setAgents(group, serverNow);
-      r.room.setTenx?.(tenx[key]);
-      r.el.classList.toggle('gate', !!tenx[key]?.gate);
+      r.room.setTenx?.(tx);
+      r.room.setFloor?.(floorOn);
+      r.el.classList.toggle('gate', !!tx?.gate);
       const c = { waiting: 0, working: 0, done: 0, idle: 0 };
       for (const a of group) c[a.status] = (c[a.status] || 0) + 1;
       r.waiting = c.waiting > 0;
       r.el.classList.toggle('waiting', r.waiting);
+      if (key.startsWith('session:')) {
+        const project = group.find((a) => a.project)?.project || r.name.split(' · ')[0];
+        r.name = tx?.active?.feature ? `${project} · ${tx.active.feature}` : project;
+        r.title.textContent = r.name;
+        if (present.has(key) && tx) board.push({ key, label: r.name, phase: phaseText(tx), status: r.waiting ? 'waiting' : tx.complete ? 'shipped' : 'working' });
+      }
       r.counts.replaceChildren();
-      const tx = tenx[key];
       if (tx) {
         const label = tx.complete ? `${tx.flavor === 'plus' ? '10x+' : '10x'} · klaar` : `${tx.flavor === 'plus' ? '10x+' : '10x'} · fase ${tx.phase ?? '?'}${tx.phase != null ? ` ${DEPTS[phasesFor(tx.flavor).depts[tx.phase]]?.label ?? ''}` : ''}`;
         r.counts.append(el('span', 'chip tenx', label));
@@ -93,18 +139,33 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
         r.counts.append(chip);
       }
     }
+    rooms.get(FLOOR)?.room.setRooms(board);
     container.classList.toggle('alert', [...rooms.values()].some((r) => r.waiting));
     if (focusKey && !rooms.has(focusKey)) focus(null);
     updateBanner();
     layout();
   }
 
+  const sizeCanvas = (k, { W, H }, s) => {
+    const canvas = rooms.get(k).el.querySelector('canvas');
+    canvas.style.width = `${Math.floor(W * s)}px`;
+    canvas.style.height = `${Math.floor(H * s)}px`;
+  };
+
   // Find the largest scale at which all visible rooms fit, wrapping like flexbox.
   function layout() {
     const keys = focusKey ? [focusKey] : order;
-    if (!keys.length) return;
     const cw = container.clientWidth - PAD * 2;
-    const ch = container.clientHeight - PAD * 2;
+    let ch = container.clientHeight - PAD * 2 - 2; // a little slack against rounding
+    // The CEO floor spans the width on top; the team rooms share the height that's left.
+    if (!focusKey && rooms.has(FLOOR)) {
+      const size = rooms.get(FLOOR).room.size();
+      const share = keys.length ? FLOOR_MAX_SHARE : 1;
+      const s = Math.max(0.3, Math.min((cw - BORDER) / size.W, (ch * share - HEADER_H) / size.H));
+      sizeCanvas(FLOOR, size, s);
+      ch -= size.H * s + HEADER_H + GAP;
+    }
+    if (!keys.length) return;
     const sizes = keys.map((k) => rooms.get(k).room.size());
     const fits = (s) => {
       let x = 0, rowH = 0, total = 0;
@@ -121,12 +182,7 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
     let lo = 0.3, hi = 8;
     for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
     const s = lo >= 4 ? Math.floor(lo) : lo; // integer scales keep big pixels crisp
-    keys.forEach((k, i) => {
-      const { el: section } = rooms.get(k);
-      const canvas = section.querySelector('canvas');
-      canvas.style.width = `${Math.floor(sizes[i].W * s)}px`;
-      canvas.style.height = `${Math.floor(sizes[i].H * s)}px`;
-    });
+    keys.forEach((k, i) => sizeCanvas(k, sizes[i], s));
   }
 
   function focus(key) {
@@ -186,9 +242,7 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
         r.failed = true;
       }
       if (!present.has(key) && r.room.isEmpty()) {
-        r.el.remove();
-        rooms.delete(key);
-        order.splice(order.indexOf(key), 1);
+        removeRoom(key);
         removed = true;
       }
     }

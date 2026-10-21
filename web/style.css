@@ -67,6 +67,7 @@ button[aria-pressed="true"] { border-color: var(--done); }
   align-items: flex-start;
   justify-content: center;
   overflow: auto;
+  scrollbar-gutter: stable; /* a scrollbar must not change the width the layout was computed for */
   /* hallway tiles */
   background-color: #3a3d55;
   background-image:
@@ -117,6 +118,10 @@ button[aria-pressed="true"] { border-color: var(--done); }
 .card .close { padding: 0 6px; font-size: 12px; }
 .decision-text { white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 11px; margin: 6px 0 0; max-height: 40vh; overflow: auto; color: var(--text); }
 .room canvas { display: block; image-rendering: pixelated; }
+/* CEO floor (ADR-009): on top, with the team rooms on the rows below */
+.room.floor { border-color: #7a5a1a; }
+.floor-break { flex-basis: 100%; height: 0; margin-top: -16px; }
+.building.focused .floor-break { display: none; }
 .banner {
   position: absolute;
   top: 8px;

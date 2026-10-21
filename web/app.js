@@ -73,7 +73,7 @@ function setSound(on) {
 function card(a, now) {
   const li = el('li', `card ${a.status}${a.kind === 'subagent' ? ' sub' : ''}`);
   const row = el('div', 'row');
-  row.append(el('span', `dot ${a.status}`), el('span', 'name', a.kind === 'session' ? (a.title || 'Manager') : a.name));
+  row.append(el('span', `dot ${a.status}`), el('span', 'name', a.kind === 'session' ? (a.title || (a.ceo ? 'CEO' : 'Manager')) : a.name));
   if (a.source) row.append(el('span', `src ${a.source}`, a.source));
   row.append(el('span', 'status', `${STATUS_LABEL[a.status] || a.status} · ${minutesSince(a.statusSince, now)}`));
   li.append(row);
@@ -109,15 +109,15 @@ function renderPanel() {
   }
   const projects = new Map();
   for (const a of agents) {
-    const key = a.projectKey || 'unknown';
-    if (!projects.has(key)) projects.set(key, { key, name: a.project || key, agents: [] });
+    const key = a.room || a.projectKey || 'unknown';
+    if (!projects.has(key)) projects.set(key, { key, name: key === 'ceo' ? 'CEO-verdieping' : a.project || key, title: a.projectKey, agents: [] });
     projects.get(key).agents.push(a);
   }
   const rank = (p) => Math.min(...p.agents.map((a) => ORDER[a.status] ?? 9));
   for (const p of [...projects.values()].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))) {
     const head = el('li', 'project');
     head.append(el('span', null, p.name), el('span', null, `${p.agents.length} agent${p.agents.length === 1 ? '' : 's'}`));
-    head.title = p.key;
+    head.title = p.title || p.key;
     head.addEventListener('click', () => building.focus(p.key));
     list.append(head);
     const sessions = p.agents.filter((a) => a.kind === 'session')

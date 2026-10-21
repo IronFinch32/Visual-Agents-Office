@@ -11,20 +11,24 @@ const NAMES = {
   classic: ['Brainstorming', 'Strategy', 'Design', 'Planning', 'Implementation', 'Verification', 'Delivery'],
 };
 
-export async function runTenxDemo(send, { flavor = 'plus' } = {}) {
+/**
+ * Options let the CEO demo run several work sessions side by side: `root` (project folder),
+ * `sessionId`, `feature` (as in active.json) and `prompt` (the /10x-team assignment).
+ */
+export async function runTenxDemo(send, { flavor = 'plus', root: rootDir, sessionId, feature = 'checkout', prompt } = {}) {
   // 10x-Team-Plus adds an Experience Design phase (UX + UI) after Strategy, shifting later phases by one.
   const plus = flavor === 'plus';
   const o = plus ? 1 : 0;
   const plugin = plus ? '10x-Team-Plus' : '10x-Team';
   const names = NAMES[flavor];
-  const root = join(tmpdir(), 'vao-demo-10x', plus ? 'checkout-plus' : 'checkout');
+  const root = rootDir || join(tmpdir(), 'vao-demo-10x', plus ? 'checkout-plus' : 'checkout');
   rmSync(root, { recursive: true, force: true });
   mkdirSync(join(root, '.10x'), { recursive: true });
-  const s = { session_id: `demo-10x-${flavor}`, cwd: root };
+  const s = { session_id: sessionId || `demo-10x-${flavor}`, cwd: root };
   const ev = (hook_event_name, extra = {}) => send({ ...s, hook_event_name, ...extra });
   const phases = [];
   const status = () => writeFileSync(join(root, '.10x', 'status.md'),
-    `# Status — checkout\n\n${names.map((n, i) => `- [${phases.includes(i) ? 'x' : ' '}] Phase ${i}: ${n}`).join('\n')}\n`);
+    `# Status — ${feature}\n\n${names.map((n, i) => `- [${phases.includes(i) ? 'x' : ' '}] Phase ${i}: ${n}`).join('\n')}\n`);
 
   // Write a file the way an agent would: PreToolUse, the write itself, PostToolUse.
   async function write(rel, content, tool = 'Write') {
@@ -36,7 +40,7 @@ export async function runTenxDemo(send, { flavor = 'plus' } = {}) {
   }
   // The plugin's own record of who is working (10x-Team-Plus ≥ 0.4.0-plus.2).
   const active = (role, phase, task) => write('.10x/active.json', JSON.stringify({
-    role, phase, phaseName: names[phase], feature: 'checkout', task, updatedAt: new Date().toISOString(),
+    role, phase, phaseName: names[phase], feature, task, updatedAt: new Date().toISOString(),
   }));
   async function done(n) {
     phases.push(n);
@@ -49,7 +53,7 @@ export async function runTenxDemo(send, { flavor = 'plus' } = {}) {
   await ev('SessionStart', { source: 'startup' });
   await sleep(1500);
   // The CEO (you) sends the assignment → stand-up in the meeting room
-  await ev('UserPromptSubmit', { prompt: `/${plugin}:10x-team Bouw een nieuwe checkout met iDEAL en kortingscodes` });
+  await ev('UserPromptSubmit', { prompt: prompt || `/${plugin}:10x-team Bouw een nieuwe checkout met iDEAL en kortingscodes` });
   await active('meeting', 0, 'Brainstorm: wat moet de checkout kunnen?');
   await sleep(5000);
   await ev('PreToolUse', { tool_name: 'AskUserQuestion', tool_input: {} });
