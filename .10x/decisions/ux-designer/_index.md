@@ -5,3 +5,4 @@
 
 ## Active features
 - [ceo-floor](ceo-floor.md)
+- [team-lounge-darts](team-lounge-darts.md)

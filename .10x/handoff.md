@@ -1,7 +1,4 @@
-# Handoff — ceo-floor
+# Handoff — team-lounge-darts
 
-**Status:** opgeleverd (Phase 7), service herstart op 2026-10-21.
-
-- Runbook: `decisions/sre/ceo-floor.md`; rollback: `decisions/devops/ceo-floor.md`.
-- Dashboard: http://127.0.0.1:4747 · demo: `VAO_DEMO_10X=ceo npm run demo` (liefst tegen `office-dev` op :4848).
-- Volgende stap: één echte CEO-run in de app zodra 10x-Team-Plus `ceo-mode` klaar is.
+Spec: `specs/2026-10-21-team-lounge-darts-design.md` · ADR-010.
+Taken T1–T5 (zie `decisions/engineering-manager/team-lounge-darts.md`), aanpak per taak in `decisions/senior-engineer/team-lounge-darts.md`.

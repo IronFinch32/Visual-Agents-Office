@@ -91,3 +91,22 @@
 ## Delivery
 - Service herstart (launchctl kickstart), :4747 draait de nieuwe code — 2026-10-21
 - Sign-off: feature af; live CEO-run in de app volgt zodra `10x-Team-Plus:ceo` er is
+
+# Status — team-lounge-darts
+
+- [x] Phase 0: Brainstorming
+- [x] Phase 1: Strategy
+- [x] Phase 2: Experience Design
+- [x] Phase 3: Design
+- [x] Phase 4: Planning
+- [ ] Phase 5: Implementation
+- [ ] Phase 6: Verification
+- [ ] Phase 7: Delivery
+
+## Progress
+- Spec goedgekeurd: `.10x/specs/2026-10-21-team-lounge-darts-design.md` · ADR-010
+- [ ] T1 Server: CEO-uitzondering in prune + tests
+- [ ] T2 Sprites: dartbord, pijl, throw-pose
+- [ ] T3 Kamer: koffie vaker, stille lounge-rotatie, 60 min naar huis
+- [ ] T4 Kamer: darts
+- [ ] T5 Visuele controle + npm test

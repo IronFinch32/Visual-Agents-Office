@@ -14,3 +14,4 @@
 - [tenx-plus](tenx-plus.md) — ADR-007
 - [living-office](living-office.md) — ADR-008
 - [ceo-floor](ceo-floor.md) — ADR-009
+- [team-lounge-darts](team-lounge-darts.md) — ADR-010
