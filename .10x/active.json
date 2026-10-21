@@ -1,1 +1,1 @@
-{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "lounge-pool", "task": "pool.js fysica en tests", "updatedAt": "2026-10-21T16:30:43Z" }
+{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "lounge-pool", "task": "Opgeleverd, live via de service", "updatedAt": "2026-10-21T16:38:06Z" }

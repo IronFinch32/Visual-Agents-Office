@@ -1,4 +1,4 @@
 # Handoff — lounge-pool
 
-**Status:** Phase 4 klaar → SDE. ADR-014, spec `specs/2026-10-21-lounge-pool-design.md`.
-Taken T1–T4 in `decisions/engineering-manager/lounge-pool.md`; aanpak in `decisions/senior-engineer/lounge-pool.md`.
+**Status:** opgeleverd (Phase 7), commit 259b02f, ADR-014.
+- Pooltafel in de lounge; twee teamleden spelen een cosmetisch potje met echte rolfysica (`web/pool.js`). Runbook: `decisions/sre/lounge-pool.md`. Rollback: `git revert 259b02f`.

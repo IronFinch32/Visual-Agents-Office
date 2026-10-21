@@ -203,13 +203,20 @@
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
+- [x] Phase 5: Implementation
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
 
 ## Progress
 - Gebruiker koos: speelbaar potje (geen toeschouwers). Spec `specs/2026-10-21-lounge-pool-design.md`, ADR-014.
-- [ ] T1 pool.js + tests
-- [ ] T2 sprites + pose cue
-- [ ] T3 tenx-room.js koppeling
-- [ ] T4 README, npm test, browsercheck
+- [x] T1 pool.js + tests
+- [x] T2 sprites + pose cue
+- [x] T3 tenx-room.js koppeling
+- [x] T4 README, npm test, browsercheck
+- Code: commit 259b02f · tests 81/81
+
+## Verification
+- QA Pass, security en design goedgekeurd — `reviews/2026-10-21-lounge-pool-*.md`
+
+## Delivery
+- Webbestanden live via de draaiende service (:4747), geen herstart nodig — 2026-10-21
