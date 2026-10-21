@@ -298,3 +298,18 @@
 
 ## Delivery
 - Live op :4747 na herladen (geen herstart nodig). Niets gepusht.
+
+# Status — go-to-market-departments
+
+- [ ] Phase 0: Brainstorming
+- [ ] Phase 1: Strategy
+- [ ] Phase 2: Experience Design
+- [ ] Phase 3: Design
+- [ ] Phase 4: Planning
+- [ ] Phase 5: Implementation
+- [ ] Phase 6: Verification
+- [ ] Phase 7: Delivery
+- [ ] Phase 8: Launch
+
+## Progress
+- Idee van de CEO: de nieuwe afdelingen van 10x-Team-Plus 0.5.0-plus.1 (Marketing & Growth, Sales & Pricing, Customer Success, Legal & Finance) en Phase 8 Launch ook in het kantoor.
