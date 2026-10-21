@@ -2,7 +2,7 @@
 // and a lounge. The CEO (that's you) has no office here (ADR-012) but drops in for a stand-up or
 // a release party. Subagents get a flex seat next to the role that sent them. People walk around
 // furniture (nav.js), hand work over, take coffee breaks, queue at the door when they need you,
-// celebrate a release and go home after a quiet spell.
+// play darts or pool in the lounge, celebrate a release and go home after a quiet spell.
 import {
   C, looksFor, outfitFor, toolCategory, rect, drawFloor, drawBackWall, drawOuterWalls, drawDoor,
   drawWhiteboard, drawPlant, drawCoffeeMachine, drawSmallTable, drawChair, drawMonitor, drawDesk,
@@ -11,9 +11,11 @@ import {
 import {
   ROLE_INFO, DEPTS, phasesFor, roleLooks, drawAccessory, drawFolder, drawZone, drawMeetingTable,
   drawTimeline, drawAdrFrame, drawBeacon, drawStamp, drawSofa, drawMiniDesk, drawDartboard, drawDart,
+  drawPoolTable, drawCue, POOL_W, POOL_H,
   drawPaperStack, drawThought, drawSmoke, drawKanban, drawBanner,
 } from './tenx-sprites.js';
 import { createNav } from './nav.js';
+import { createPoolGame, POCKETS, BALL_R } from './pool.js';
 
 const MARGIN = 8;
 const WALL_H = 48;
@@ -42,6 +44,11 @@ const LOUNGE_SPOTS = [[14, 48], [64, 48], [26, 64], [64, 66], [14, 98], [36, 98]
 const DART_BOARD = [38, 14];
 const DART_SPOTS = [[31, 46], [47, 46]];
 const DART_CHAT = ['180!', 'Bull!', 'Mis…', 'Dubbel 20!', 'Nog een potje?', 'Net ernaast'];
+// Pool (ADR-014): top-left of the table and the two waiting spots (feet), relative to the lounge zone.
+const POOL_TABLE = [90, 56];
+const POOL_SPOTS = [[82, 78], [148, 78]];
+const POOL_AIM = 1.1; // seconds of lining up before the shot
+const POOL_CHAT = ['In de hoek!', 'Mooie bank!', 'Net niet', 'Zag je dat?', 'Nog een potje?'];
 const CHAT = ['☕', 'Mooi werk!', 'Nog koffie?', '…', 'Haha', 'Echt?'];
 
 const STATUS_TEXT = {
@@ -82,6 +89,8 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
   let shippedHome = false;
   let lullNow = false;
   let darts = { turn: 0, next: 0, stuck: [], flying: null };
+  // shooter: who lines up now, stay: who just shot and watches the balls roll, held: the cue line
+  let pool = { game: createPoolGame(), turn: 0, next: 0, shots: 0, shooter: null, stay: null, aim: 0, angle: 0, stance: null, by: null, held: null };
 
   // ---------- geometry ----------
   const zone = (name) => {
@@ -112,6 +121,23 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
   }
   const dartBoard = () => { const z = zone('lounge'); return { x: z.x + DART_BOARD[0], y: z.y + DART_BOARD[1] }; };
   const dartSpot = (i) => { const z = zone('lounge'); const [dx, dy] = DART_SPOTS[i]; return { x: z.x + dx, y: z.y + dy }; };
+  const poolTable = () => { const z = zone('lounge'); return { x: z.x + POOL_TABLE[0], y: z.y + POOL_TABLE[1] }; };
+  const poolSpot = (i) => { const z = zone('lounge'); const [dx, dy] = POOL_SPOTS[i]; return { x: z.x + dx, y: z.y + dy }; };
+  // Where the shooter stands: behind the cue ball on the line of the shot, just clear of the table.
+  // Returns the feet; the hands (and the cue) are 9 px higher.
+  function poolStance(angle) {
+    const tb = poolTable();
+    const c = pool.game.cue();
+    const bx = tb.x + 3 + c.x, by = tb.y + 3 + c.y;
+    const z = zone('lounge');
+    let hx = bx, hy = by;
+    for (let d = 6; d < 90; d++) {
+      hx = bx - Math.cos(angle) * d;
+      hy = by - Math.sin(angle) * d;
+      if (hx <= tb.x - 5 || hx >= tb.x + POOL_W + 5 || hy <= tb.y - 12 || hy >= tb.y + POOL_H) break;
+    }
+    return { x: Math.max(z.x + 8, Math.min(z.x + z.w - 8, hx)), y: Math.max(z.y + 28, Math.min(z.y + 100, hy + 9)) };
+  }
   const loungeSpot = (i) => { const z = zone('lounge'); const [dx, dy] = LOUNGE_SPOTS[i % LOUNGE_SPOTS.length]; return { x: z.x + dx, y: z.y + dy }; };
 
   function buildNav() {
@@ -133,6 +159,8 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     nav.block(lz.x + 6, lz.y + 77, 38, 11); // sofa
     nav.block(lz.x + 44, lz.y + 58, 12, 7); // table
     nav.block(lz.x + DART_BOARD[0] - 5, lz.y + DART_BOARD[1] + 12, 10, 6); // dartboard stand
+    const pt = poolTable();
+    nav.block(pt.x - 1, pt.y, POOL_W + 2, POOL_H + 6); // pool table
   }
 
   function applyFlavor(next) {
@@ -327,9 +355,10 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     };
 
     const finished = new Set((tenx.done || []).map((p) => PH.depts[p]));
-    const inLounge = (mb) => mb.mode === 'coffee' || mb.mode === 'darts';
+    const inLounge = (mb) => mb.mode === 'coffee' || mb.mode === 'darts' || mb.mode === 'pool';
     let loungeCount = members.filter(inLounge).length;
     const dartsTaken = new Set(members.filter((mb) => mb.mode === 'darts' && t < mb.modeUntil).map((mb) => mb.dartSpot));
+    const poolTaken = new Set(members.filter((mb) => mb.mode === 'pool' && t < mb.modeUntil).map((mb) => mb.poolSpot));
     let meetingSeat = 0;
     for (const ch of members) {
       const role = ch.member;
@@ -344,7 +373,11 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
       else if (inLounge(ch) && t < ch.modeUntil) mode = ch.mode;
       else if (!busy && loungeCount < (lull ? 5 : 3) && Math.random() < dt / (lull ? 8 : finished.has(ROLE_INFO[role].dept) ? 15 : 40)) {
         const free = [0, 1].find((i) => !dartsTaken.has(i));
-        if (free !== undefined && Math.random() < 0.4) { mode = 'darts'; ch.dartSpot = free; dartsTaken.add(free); } else mode = 'coffee';
+        const freeCue = [0, 1].find((i) => !poolTaken.has(i));
+        const r = Math.random();
+        if (free !== undefined && r < 0.35) { mode = 'darts'; ch.dartSpot = free; dartsTaken.add(free); }
+        else if (freeCue !== undefined && r < 0.7) { mode = 'pool'; ch.poolSpot = freeCue; poolTaken.add(freeCue); }
+        else mode = 'coffee';
         ch.modeUntil = t + (lull ? 15 + Math.random() * 20 : 12 + Math.random() * 13);
         loungeCount++;
       }
@@ -361,12 +394,15 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
         if (i !== undefined) { const s = loungeSpot(i); goTo(ch, s.x, s.y); }
         else { const s = meeting.seats[meetingSeat++ % meeting.seats.length]; goTo(ch, s.x, s.y); } // party overflow in the meeting room
       } else if (mode === 'darts') { const s = dartSpot(ch.dartSpot); goTo(ch, s.x, s.y); }
+      else if (mode === 'pool') { const s = (pool.shooter === ch || pool.stay === ch) && pool.stance ? pool.stance : poolSpot(ch.poolSpot); goTo(ch, s.x, s.y); }
       else if (mode === 'handoff') runHandoff(ch, role, t);
       if (mode !== 'coffee' && mode !== 'party') ch.loungeSpot = undefined;
       if (mode !== 'darts') ch.dartSpot = undefined;
+      if (mode !== 'pool') ch.poolSpot = undefined;
     }
 
     playDarts(members.filter((mb) => mb.mode === 'darts' && !mb.walking && !mb.hidden), t);
+    playPool(members.filter((mb) => mb.mode === 'pool' && !mb.hidden), t, dt);
 
     // the CEO drops in for a stand-up or a party, otherwise stays out (ADR-012)
     if (!ceo) { /* nothing to do */ } else if (quiet || (!standup && !party)) { ceo.mode = 'away'; ceo.seatAt = null; goTo(ceo, door().x, door().y); }
@@ -412,6 +448,53 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
       start: t + 0.1, dur: 0.22, color: info.accent || info.shirt, by: p,
     };
     darts.next = t + 1.3 + Math.random() * 0.7;
+  }
+
+  // Pool: the players take turns. The shooter walks behind the cue ball, lines up and shoots at a
+  // random colour ball; the balls roll (pool.js) and the next one goes once everything lies still.
+  function playPool(players, t, dt) {
+    const g = pool.game;
+    for (const e of g.step(dt)) {
+      const by = pool.by;
+      if (by && Math.random() < (e.type === 'scratch' ? 0.7 : 0.45)) by.say = { text: e.type === 'scratch' ? 'Scratch…' : POOL_CHAT[Math.floor(Math.random() * POOL_CHAT.length)], until: t + 1.8 };
+    }
+    if (!players.includes(pool.stay)) pool.stay = null;
+    const s = pool.shooter;
+    if (s && !players.includes(s)) { pool.shooter = null; pool.aim = 0; }
+    else if (s) {
+      if (s.walking || g.moving()) return;
+      if (!pool.aim) pool.aim = t;
+      if (t >= pool.aim + POOL_AIM) {
+        g.shoot(pool.angle, 55 + Math.random() * 35);
+        Object.assign(pool, { shots: pool.shots + 1, by: s, stay: s, shooter: null, aim: 0, next: t + 1.2 });
+      }
+      return;
+    }
+    if (g.moving() || t < pool.next) return;
+    if (!g.left() || pool.shots >= 14) { g.rack(); Object.assign(pool, { shots: 0, next: t + 1.5, stay: null }); return; }
+    const ready = players.filter((p) => !p.walking).sort((a, b) => a.poolSpot - b.poolSpot);
+    if (!ready.length) return;
+    const p = ready[pool.turn++ % ready.length];
+    if (g.cue().in) g.respot();
+    const c = g.cue();
+    const targets = g.balls.filter((b) => !b.in && b.id !== 'cue');
+    const tb = targets[Math.floor(Math.random() * targets.length)];
+    pool.angle = Math.atan2(tb.y - c.y, tb.x - c.x) + (Math.random() - 0.5) * 0.3;
+    Object.assign(pool, { shooter: p, stay: null, aim: 0, stance: poolStance(pool.angle) });
+  }
+
+  // The cue from the shooter's hands towards the cue ball; it pulls back while aiming and snaps forward.
+  function cueLine(ch, t) {
+    const tb = poolTable();
+    const c = pool.game.cue();
+    const bx = tb.x + 3 + c.x, by = tb.y + 3 + c.y;
+    const hx = ch.x, hy = ch.y - 9;
+    const len = Math.hypot(bx - hx, by - hy) || 1;
+    const ux = (bx - hx) / len, uy = (by - hy) / len;
+    const k = pool.aim ? Math.min(1, (t - pool.aim) / POOL_AIM) : 0;
+    const pull = k < 0.8 ? (4 * k) / 0.8 : 4 * (1 - (k - 0.8) / 0.2);
+    const gap = BALL_R + 1 + pull;
+    return { x1: hx - ux * (pull + 4), y1: hy - uy * (pull + 4), x2: bx - ux * gap, y2: by - uy * gap };
   }
 
   function runHandoff(ch, role, t) {
@@ -532,6 +615,15 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     scene.push({ y: lz.y + 65, draw: () => drawSmallTable(ctx, lz.x + 44, lz.y + 58) });
     scene.push({ y: lz.y + 88, draw: () => drawSofa(ctx, lz.x + 8, lz.y + 77, 34) });
     scene.push({ y: lz.y + 34, draw: () => drawPlant(ctx, lz.x + 6, lz.y + 14, t) });
+    const pt = poolTable();
+    scene.push({ y: pt.y + POOL_H + 4, draw: () => drawPoolTable(ctx, pt.x, pt.y, pool.game.balls, POCKETS) });
+    const sh = pool.shooter;
+    if (sh && !sh.walking && !sh.hidden) { pool.held = cueLine(sh, t); }
+    if (sh && !sh.walking && !sh.hidden || pool.stay && !pool.stay.walking && pool.held) { const h = pool.held; overlays.push(() => drawCue(ctx, h.x1, h.y1, h.x2, h.y2)); }
+    for (const ch of chars.values()) {
+      if (ch.mode !== 'pool' || ch.walking || ch.hidden || ch === sh || ch === pool.stay) continue;
+      overlays.push(() => drawCue(ctx, ch.x + 6, ch.y - 22, ch.x + 6, ch.y - 2)); // waiting, cue upright
+    }
     const db = dartBoard();
     scene.push({ y: db.y + 17, draw: () => drawDartboard(ctx, db.x, db.y, darts.stuck) });
     const fl = darts.flying;
@@ -563,6 +655,7 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
       if (ch.walking) pose = 'walk';
       else if (ch.mode === 'coffee' || ch.mode === 'party') pose = 'sip';
       else if (ch.mode === 'darts') pose = 'throw';
+      else if (ch.mode === 'pool') pose = ch === pool.shooter || ch === pool.stay ? 'cue' : 'stand';
       else if (ch.mode === 'ceo') pose = 'waiting';
       else if (failed && home) pose = 'stretch';
       else if (ch.seatedNow) pose = a && home ? (a.status === 'idle' ? 'read' : a.status) : 'read';
@@ -723,6 +816,6 @@ export function createTenxRoom(canvas, { phase: getPhase, onRoleClick } = {}) {
     frame,
     size: () => ({ W: L.W, H: L.H }),
     isEmpty: () => ![...chars.values()].some((ch) => ch.agent),
-    debug: () => ({ chars: [...chars.values()].map(({ id, x, y, mode, path, goal, flexRole, flexIndex, hidden, walking }) => ({ id, x, y, mode, path: path.length, goal, flexRole, flexIndex, hidden, walking })), driven: [...driven.keys()], L, darts: { stuck: darts.stuck.length, flying: !!darts.flying, turn: darts.turn } }),
+    debug: () => ({ chars: [...chars.values()].map(({ id, x, y, mode, path, goal, flexRole, flexIndex, hidden, walking }) => ({ id, x, y, mode, path: path.length, goal, flexRole, flexIndex, hidden, walking })), driven: [...driven.keys()], L, darts: { stuck: darts.stuck.length, flying: !!darts.flying, turn: darts.turn }, pool: { shots: pool.shots, left: pool.game.left(), moving: pool.game.moving(), shooter: pool.shooter?.id || null, players: [...chars.values()].filter((c) => c.mode === 'pool').map((c) => c.id) } }),
   };
 }

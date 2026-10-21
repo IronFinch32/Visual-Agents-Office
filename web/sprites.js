@@ -463,6 +463,11 @@ export function drawPerson(ctx, x, y, looks, { pose, t = 0, seated, walkPhase = 
       L(9, 11, 3, 3, '#f4f4f4');
       L(10, 11, 1, 1, '#6b3e1f');
     }
+  } else if (pose === 'cue') {
+    // pool: both hands low in front, holding the cue (drawn by the room)
+    L(1, 8, 1, 4, shirtDark); L(8, 8, 1, 4, shirtDark);
+    band(1); band(8);
+    L(2, 11, 2, 1, looks.skin); L(6, 11, 2, 1, looks.skin);
   } else if (pose === 'throw') {
     // darts: aim with the hand next to the head, then the arm snaps up and forward
     L(0, 8, 1, 6, shirtDark); L(0, 14, 1, 1, looks.skin);

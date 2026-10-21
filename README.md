@@ -24,7 +24,7 @@ Gebruik je de [10x-team plugin](https://github.com/Jaan-Mustafa/10x-Team), dan k
 - **Klik op een teamlid** om het begin van zijn nieuwste beslissing in de zijbalk te lezen.
 - **Jij bent de CEO, op bezoek.** Een teamkamer heeft geen eigen directiekamer; de lounge is daardoor dubbel zo breed. Stuur je een prompt, dan komt de CEO binnen via de deur voor een korte stand-up met je opdracht in een ballon, en vertrekt daarna weer. Bij het opleveringsfeest viert de CEO mee. Wacht iemand op jou, dan loopt die naar de deur en wacht daar met zijn vraag; meerdere wachtenden vormen een rij.
 - **Echte overdracht**: rondt een fase af, dan brengt de vorige rol een map naar het bureau van de volgende ("Overdracht: …" / "Ik pak het op!") en gaat daarna koffie halen.
-- **Leven in de lounge**: wie niet aan de beurt is, haalt af en toe koffie en kletst even; rollen van afgeronde fases vaker.
+- **Leven in de lounge**: wie niet aan de beurt is, haalt af en toe koffie en kletst even, gooit een pijltje op het dartbord of speelt een potje pool: om de beurt stoten, ballen rollen, botsen en vallen in de pockets. Rollen van afgeronde fases doen dit vaker.
 - **Flexplekken**: subagents (Explore e.d.) zitten op een krukje naast het bureau van de rol die ze aanstuurt; klaar, dan naar de lounge.
 - **Looproutes**: iedereen loopt om bureaus, tafels en de bank heen.
 - **Details**: een gedachtewolk bij "denkt na", een rookwolkje als een tool mislukt, een papierstapel die groeit met het werk in de fase, een **kanbanbord** met de taken (T1, T2, …) uit de EM-planning, een **"SHIPPED!"-feest** bij oplevering, en na 10 minuten stilte gaat het team naar huis (lichten uit).

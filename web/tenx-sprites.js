@@ -275,6 +275,40 @@ export function drawDart(ctx, x, y, color = '#4ea3ff') {
   rect(ctx, px - 1, py + 3, 3, 1, color);
 }
 
+// A pool table (ADR-014); (x, y) is the top-left of the rail, the cloth starts 3 px in.
+// balls: [{ x, y, color, in }] in cloth coordinates (see pool.js).
+export const POOL_W = 46;
+export const POOL_H = 24;
+export function drawPoolTable(ctx, x, y, balls = [], pockets = []) {
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(x + POOL_W / 2, y + POOL_H + 7, POOL_W / 2 + 1, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+  rect(ctx, x + 3, y + POOL_H + 3, 2, 4, '#3d2817'); // legs
+  rect(ctx, x + POOL_W - 5, y + POOL_H + 3, 2, 4, '#3d2817');
+  rect(ctx, x + 1, y + POOL_H, POOL_W - 2, 4, '#4f3520'); // apron
+  rect(ctx, x, y, POOL_W, POOL_H, '#6b4a2b'); // rail
+  rect(ctx, x + 1, y, POOL_W - 2, 1, '#8a6238');
+  rect(ctx, x + 3, y + 3, POOL_W - 6, POOL_H - 6, '#2e8b57'); // cloth
+  rect(ctx, x + 3, y + 3, POOL_W - 6, 1, '#23704a');
+  for (const p of pockets) rect(ctx, Math.round(x + 3 + p.x) - 1, Math.round(y + 3 + p.y) - 1, 3, 3, '#111114');
+  for (const b of balls) {
+    if (b.in) continue;
+    const bx = Math.round(x + 3 + b.x) - 1, by = Math.round(y + 3 + b.y) - 1;
+    rect(ctx, bx, by, 3, 3, b.color);
+    rect(ctx, bx, by, 1, 1, 'rgba(255,255,255,.55)');
+  }
+}
+
+// A cue from the butt (x1, y1) to the tip (x2, y2), drawn pixel by pixel.
+export function drawCue(ctx, x1, y1, x2, y2) {
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  const n = Math.max(1, Math.round(len));
+  for (let i = 0; i <= n; i++) {
+    const k = i / n;
+    const color = i >= n - 1 ? '#4ea3ff' : i < 5 ? '#4f3520' : '#d8b27a';
+    rect(ctx, Math.round(x1 + (x2 - x1) * k), Math.round(y1 + (y2 - y1) * k), 1, 1, color);
+  }
+}
+
 export function drawMiniDesk(ctx, x, y) {
   ctx.fillStyle = 'rgba(0,0,0,.2)';
   ctx.beginPath(); ctx.ellipse(x + 8, y + 9, 9, 2, 0, 0, Math.PI * 2); ctx.fill();
