@@ -51,8 +51,17 @@ const shade = (hex, f) => {
   return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
 };
 
+const GENERIC_SHIRTS = ['#6d8f4e', '#8f6d4e', '#4e6d8f', '#8f4e7a', '#4e8f86', '#7a7a8f'];
+/** Look and label of a role; a role this office doesn't know yet gets a generic hoodie (ADR-016). */
+export function roleInfo(role, title) {
+  if (ROLE_INFO[role]) return ROLE_INFO[role];
+  let h = 0;
+  for (const ch of String(role)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return { label: String(title || role).slice(0, 10), dept: 'other', outfit: 'hoodie', shirt: GENERIC_SHIRTS[h % GENERIC_SHIRTS.length] };
+}
+
 export function roleLooks(role, base) {
-  const info = ROLE_INFO[role];
+  const info = roleInfo(role);
   return { ...base, shirt: info.shirt, shirtDark: shade(info.shirt, 0.72) };
 }
 
@@ -101,14 +110,14 @@ export function drawAccessory(ctx, x, y, role, { seated, pose, t = 0 }) {
   }
 }
 
-export function drawFolder(ctx, x, y) {
-  rect(ctx, x - 3, y - 4, 7, 5, '#e8b84a');
-  rect(ctx, x - 3, y - 5, 3, 1, '#e8b84a');
-  rect(ctx, x - 2, y - 3, 5, 1, '#f6d98a');
+export function drawFolder(ctx, x, y, color = '#e8b84a') {
+  rect(ctx, x - 3, y - 4, 7, 5, color);
+  rect(ctx, x - 3, y - 5, 3, 1, color);
+  rect(ctx, x - 2, y - 3, 5, 1, color === '#e8b84a' ? '#f6d98a' : 'rgba(255,255,255,.45)');
 }
 
-export function drawZone(ctx, x, y, w, h, dept, { active, t = 0 }) {
-  const d = DEPTS[dept];
+export function drawZone(ctx, x, y, w, h, dept, { active, t = 0, label, rug } = {}) {
+  const d = { ...(DEPTS[dept] || { label: dept, rug: '#5a5d6e' }), ...(label ? { label } : {}), ...(rug ? { rug } : {}) };
   rect(ctx, x + 2, y + 2, w - 4, h - 4, shade(d.rug, 0.75));
   rect(ctx, x + 3, y + 3, w - 6, h - 6, d.rug);
   if (active) {
@@ -119,11 +128,11 @@ export function drawZone(ctx, x, y, w, h, dept, { active, t = 0 }) {
   // department sign
   ctx.font = `600 5px ${FONT}`;
   ctx.textBaseline = 'top';
-  const label = d.label.toUpperCase();
-  const lw = Math.ceil(ctx.measureText(label).width) + 4;
+  const sign = d.label.toUpperCase();
+  const lw = Math.ceil(ctx.measureText(sign).width) + 4;
   rect(ctx, x + 4, y + 4, lw, 7, active ? '#f1c40f' : 'rgba(0,0,0,.35)');
   ctx.fillStyle = active ? '#2a1b10' : '#ffffff';
-  ctx.fillText(label, x + 6, y + 5);
+  ctx.fillText(sign, x + 6, y + 5);
 }
 
 export function drawMeetingTable(ctx, x, y, w) {

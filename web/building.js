@@ -3,6 +3,8 @@
 import { createRoom } from './room.js';
 import { createTenxRoom } from './tenx-room.js';
 import { createCeoFloor } from './ceo-floor.js';
+import { createCompany } from './company.js';
+import { deriveCases } from './company-model.js';
 import { DEPTS, phasesFor } from './tenx-sprites.js';
 import { timePhase } from './sprites.js';
 
@@ -16,6 +18,9 @@ const BORDER = 6;
 
 const STATUS_ICON = { waiting: '!', working: '●', done: '✓', idle: 'z' };
 const FLOOR = 'ceo';
+const COMPANY = 'company';
+// One company with departments (ADR-016); ?weergave=kamers keeps the old room per project/session.
+const ROOMS_VIEW = new URLSearchParams(location.search).get('weergave') === 'kamers';
 const FLOOR_MAX_SHARE = 0.3; // of the building height
 
 function el(tag, cls, text) {
@@ -59,6 +64,14 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
       entry.extra = el('div', 'floor-break');
       container.prepend(section, entry.extra);
       entry.room = createCeoFloor(canvas, { phase, onFocus: (k) => focus(k) });
+    } else if (key === COMPANY) {
+      title.textContent = 'Bedrijf';
+      section.title = 'Eén bedrijf met afdelingen';
+      canvas.setAttribute('aria-label', 'Bedrijf met afdelingen; wie aan welk project werkt staat ook in de lijst');
+      entry.name = 'Bedrijf';
+      container.append(section);
+      entry.room = createCompany(canvas, { phase, onRoleClick: (project, role) => onRoleClick?.(project, role) });
+      order.push(key);
     } else {
       container.append(section);
       entry.room = createRoom(canvas, { phase });
@@ -88,7 +101,8 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
       : createRoom(canvas, { phase });
   }
 
-  function setAgents(list, serverNow, tenx = {}) {
+  function setAgents(list, serverNow, tenx = {}, departments = null) {
+    if (!ROOMS_VIEW) return setCompany(list, serverNow, tenx, departments);
     const groups = new Map();
     for (const a of list) {
       const key = a.room || a.projectKey || 'unknown';
@@ -148,6 +162,46 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
     layout();
   }
 
+  // Company view: the CEO floor (if any) on top, one company below with every other agent.
+  function setCompany(list, serverNow, tenx, departments) {
+    const ceoAgents = list.filter((a) => a.room === FLOOR);
+    const rest = list.filter((a) => a.room !== FLOOR);
+    const hadFloor = rooms.has(FLOOR);
+    present = new Set([COMPANY, ...(ceoAgents.length ? [FLOOR] : [])]);
+    if (ceoAgents.length && !hadFloor) makeRoom(FLOOR, 'CEO', FLOOR);
+    if (!rooms.has(COMPANY)) makeRoom(COMPANY, 'Bedrijf', COMPANY);
+    const company = rooms.get(COMPANY);
+    company.room.setData(rest, tenx, departments, serverNow);
+    const cases = deriveCases(rest, tenx);
+    const known = new Set(prevCaseKeys);
+    prevCaseKeys = new Set(cases.map((c) => c.key));
+    if (hadFloor && cases.some((c) => c.kind === 'tenx' && !known.has(c.key)) && known.size) rooms.get(FLOOR).room.handoff();
+    const board = [];
+    for (const c of cases) {
+      if (c.kind !== 'tenx') continue;
+      const tx = { ...tenx[c.projectKey], ...(tenx[c.projectKey]?.sessions?.[c.sessionId] || {}) };
+      const label = c.feature ? `${c.project} · ${c.feature}` : c.project;
+      board.push({ key: c.key, label, phase: phaseText(tx), color: company.room.colorOf(c.projectKey), status: c.status === 'waiting' ? 'waiting' : tx.gate ? 'waiting' : c.shipped ? 'shipped' : 'working', gate: !!tx.gate });
+    }
+    rooms.get(FLOOR)?.room.setAgents(ceoAgents, serverNow);
+    rooms.get(FLOOR)?.room.setRooms(board);
+    const c = { waiting: 0, working: 0, done: 0, idle: 0 };
+    for (const a of rest) c[a.status] = (c[a.status] || 0) + 1;
+    company.waiting = c.waiting > 0;
+    company.el.classList.toggle('waiting', company.waiting);
+    company.el.classList.toggle('gate', cases.some((x) => x.gate));
+    company.counts.replaceChildren();
+    const projects = new Set(cases.map((x) => x.projectKey)).size;
+    if (projects) company.counts.append(el('span', 'chip tenx', `${projects} project${projects === 1 ? '' : 'en'}`));
+    for (const k of ['waiting', 'working', 'done']) if (c[k]) company.counts.append(el('span', `chip ${k}`, `${STATUS_ICON[k]} ${c[k]}`));
+    if (rooms.has(FLOOR)) rooms.get(FLOOR).waiting = ceoAgents.some((a) => a.status === 'waiting');
+    container.classList.toggle('alert', [...rooms.values()].some((r) => r.waiting));
+    if (focusKey && !rooms.has(focusKey)) focus(null);
+    updateBanner();
+    layout();
+  }
+  let prevCaseKeys = new Set();
+
   const sizeCanvas = (k, { W, H }, s) => {
     const canvas = rooms.get(k).el.querySelector('canvas');
     canvas.style.width = `${Math.floor(W * s)}px`;
@@ -188,6 +242,12 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
   }
 
   function focus(key) {
+    // In the company view a project or work session isn't a room: light it up instead (ADR-016).
+    if (!ROOMS_VIEW && key && key !== FLOOR && key !== COMPANY) {
+      rooms.get(COMPANY)?.room.highlight(key);
+      if (focusKey === FLOOR) focus(null);
+      return;
+    }
     // FLIP: remember where rooms were, change the layout, then animate from old to new.
     const before = new Map([...rooms].map(([k, r]) => [k, r.el.getBoundingClientRect()]));
     focusKey = key;

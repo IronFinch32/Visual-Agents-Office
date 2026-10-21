@@ -3,7 +3,7 @@
 import { ROLE_INFO, DEPTS, phasesFor } from './tenx-sprites.js';
 
 export const ZONE_W = 80;
-export const ZONE_H = 118;
+export const ZONE_H = 134;
 export const WALL_H = 22;
 export const MARGIN = 8;
 export const BOTTOM = 6;

@@ -10,7 +10,7 @@ let agents = [];
 let tenx = {};
 let decision = null; // { project, role, file, text } shown at the top of the panel
 const ROLE_LABEL = {
-  cto: 'CTO', 'product-manager': 'Product Manager', architect: 'Architect', 'staff-engineer': 'Staff Engineer',
+  cto: 'CTO', 'product-manager': 'Product Manager', 'ux-designer': 'UX Designer', 'ui-designer': 'UI Designer', architect: 'Architect', 'staff-engineer': 'Staff Engineer',
   'engineering-manager': 'Engineering Manager', 'senior-engineer': 'Senior Engineer', sde: 'SDE', dba: 'DBA',
   qa: 'QA Engineer', security: 'Security Engineer', devops: 'DevOps Engineer', sre: 'SRE',
 };
@@ -153,7 +153,7 @@ function onSnapshot(data) {
   wasWaiting.clear();
   for (const id of waitingNow) wasWaiting.add(id);
   tenx = data.tenx || {};
-  building.setAgents(agents, data.now, tenx);
+  building.setAgents(agents, data.now, tenx, data.departments || null);
   renderPanel();
   if (newlyWaiting) chime();
 }

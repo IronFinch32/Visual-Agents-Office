@@ -98,7 +98,10 @@ export function createCeoFloor(canvas, { phase: getPhase, onFocus } = {}) {
       const rw = Math.ceil(ctx.measureText(right).width);
       ctx.fillText(right, x + w - 3 - rw, ly);
       ctx.fillStyle = l.status === 'waiting' ? '#ffd1d6' : '#ffffff';
-      ctx.fillText(fit(ctx, l.label, w - rw - 12), x + 3, ly);
+      // the project's colour in the company (ADR-016)
+      const lx = l.color ? x + 8 : x + 3;
+      if (l.color) rect(ctx, x + 3, ly + 1, 3, 3, l.color);
+      ctx.fillText(fit(ctx, l.gate ? `⚠ ${l.label}` : l.label, w - rw - 12 - (lx - x - 3)), lx, ly);
       hits.push({ key: l.key, x, y: ly - 0.5, w, h: 6 });
     });
     if (shown.length < lines.length) {

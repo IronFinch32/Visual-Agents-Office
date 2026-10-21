@@ -2,13 +2,29 @@
 
 Een live pixel-art kantoor dat laat zien welke **Claude Code**- en **Codex**-agents er op je computer draaien, wat ze doen en **wie er op jou wacht**. Zet het op een tweede scherm en volg je agents zonder de hele tijd door sessies te klikken.
 
-- **Een kantoor per project.** Elke projectmap (git-root; worktrees tellen mee) is een kamer in het gebouw.
+- **Eén bedrijf.** Bovenaan de CEO-verdieping met een regel per project, daaronder één bedrijf met afdelingen. Elke sessie is een gekleurde projectmap die van afdeling naar afdeling gaat (zie [Eén bedrijf](#één-bedrijf)).
 - **Sessies zijn managers**, met hun opdracht op het whiteboard aan de muur.
 - **Elke subagent heeft een eigen bureau**, met een ballon die zegt wat hij doet en een beeldscherm dat de tool laat zien (terminal, code, zoeken, web, …).
 - **Wacht er iemand op jou**, dan steekt hij zijn hand op, knippert er een rood `!`, worden de andere kamers gedimd en staat hij in een rode spotlight. De browsertab toont `(1) wacht`, en een belletje is optioneel.
 - **Klaar?** Subagents lopen naar de koffiecorner; managers leunen achterover met koffie.
 - Het licht volgt je klok: overdag zon door de ramen, 's avonds en 's nachts bureaulampjes.
 - **Claude en Codex door elkaar.** Een klein label op elk naambordje (`claude` of `codex`) laat zien welke tool een agent aanstuurt; werken ze aan hetzelfde project, dan zitten ze in hetzelfde kantoor.
+
+## Eén bedrijf
+
+Het kantoor is **één bedrijf** dat op één scherm past, hoeveel sessies je ook hebt:
+
+- **Afdelingen**: Vergaderzaal, Strategie, Design, Architectuur, Planning, Engineering, Kwaliteit, Operations, een **Flexwerkplek** en de **Lounge**. Elke rol heeft een vaste medewerker met een eigen uiterlijk.
+- **Projectmappen**: elke werksessie krijgt een eigen kleur. De map ligt op het bureau van de rol die er nu aan werkt; op het naambordje staat de rol en het project ("SDE · webshop"). Wisselt de rol of de fase, dan loopt de medewerker met de map naar het volgende bureau.
+- **Collega's**: hebben twee projecten tegelijk dezelfde rol nodig, dan komt er een collega binnen ("SDE 2") met een eigen bureau; is het werk klaar, dan gaat die weer. Een derde project in dezelfde rol komt als stapel (`+1`) op het bureau.
+- **Vergaderzaal**: elk project in fase 0 (of dat op jouw antwoord wacht in een brainstorm) krijgt een eigen tafel met de PM.
+- **Flexwerkplek**: sessies zonder `.10x/` (ook Codex) krijgen hier een bureau met projectnaam en `claude`/`codex`.
+- **Lounge**: wie niets te doen heeft, haalt koffie, gooit darts of speelt pool. Na 10 minuten stilte hangt iedereen daar; na een uur gaan de lichten uit.
+- **Wie wacht op jou** steekt zijn hand op met een rode `!` en de vraag; de regel op het CEO-bord wordt rood.
+- **Klik op een regel van het CEO-bord** of een project in de zijbalk: dat project licht op, de rest wordt even gedimd. **Klik op een medewerker** voor zijn nieuwste beslissing in dat project.
+- **Afdelingen uit de plugin**: het kantoor leest `departments.json` van 10x-Team-Plus (vanaf `0.4.0-plus.8`). Komt er een afdeling of rol bij, dan verschijnt die vanzelf (onbekende rollen in "Overig"). Zonder dat bestand gebruikt het kantoor de ingebouwde indeling. Een ander pad kan met `TENX_DEPARTMENTS=/pad/naar/departments.json`.
+
+De oude weergave met een kamer per project of werksessie staat nog achter `?weergave=kamers`. De rest van deze README beschrijft wat het 10x-kantoor herkent; dat geldt voor beide weergaven.
 
 ## 10x-team modus
 
@@ -107,7 +123,8 @@ Docker is bewust niet gebruikt: de server moet je projectmappen kunnen zien (om 
 Opties: `--port <n>` (standaard 4747, of de omgevingsvariabele `VAO_PORT`), `--no-open` (browser niet openen) en `--yes` (hooks installeren zonder te vragen). Met npm geef je ze door na `--`, bijvoorbeeld `npm start -- --port 5000`. Gebruik bij een andere poort dezelfde `--port` voor `setup`.
 
 In de browser:
-- Klik op een kamer om in te zoomen; terug met `Esc` of "← Gebouw".
+- Klik op het bedrijf of de CEO-verdieping om in te zoomen; terug met `Esc` of "← Gebouw".
+- Plak `?weergave=kamers` achter de URL voor de oude weergave met een kamer per project.
 - Plak `?tijd=dag`, `?tijd=avond` of `?tijd=nacht` achter de URL om de belichting te forceren.
 - Met ☰ toon of verberg je de zijbalk, en met 🔕 zet je het belletje aan of uit.
 
@@ -147,7 +164,7 @@ bin/        startcommando (start, setup, uninstall, demo, autostart)
 service/    autostart via launchd / systemd / Taakplanner
 server/     HTTP + SSE server, de status-state-machine en de 10x-herkenning (tenx.js)
 hooks/      installer voor ~/.claude/settings.json en ~/.codex/hooks.json
-web/        de browser-app (canvas, geen build-stap); tenx-room.js is het 10x-kantoor
+web/        de browser-app (canvas, geen build-stap); company.js is het bedrijf, tenx-room.js de oude 10x-kamer
 scripts/    demo
 test/       node:test tests
 .10x/       ontwerpdocumenten, ADR's en reviews
