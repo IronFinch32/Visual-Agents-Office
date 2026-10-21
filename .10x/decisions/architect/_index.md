@@ -19,3 +19,4 @@
 - [no-directie](no-directie.md) — ADR-012
 - [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)
 - [lounge-pool](lounge-pool.md) — ADR-014: pool.js + modus pool
+- [session-sync](session-sync.md) — ADR-015: eigenaar per project, stand per sessie

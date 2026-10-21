@@ -1,1 +1,1 @@
-{ "role": "architect", "phase": 3, "phaseName": "Design", "feature": "session-sync", "task": "ADR-015 eigenaar per project, stand per sessie", "updatedAt": "2026-10-21T16:55:14Z" }
+{ "role": "engineering-manager", "phase": 4, "phaseName": "Planning", "feature": "session-sync", "task": "Taken voor kantoor en plugin-hook", "updatedAt": "2026-10-21T16:55:45Z" }

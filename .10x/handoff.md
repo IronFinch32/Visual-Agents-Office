@@ -4,3 +4,5 @@ Spec: `specs/2026-10-21-session-sync-design.md` (goedgekeurd door de gebruiker: 
 Volgende: CTO/PM.
 
 Volgende: UX/UI — alleen de bestaande kamer krijgt de juiste stand per sessie.
+
+Design klaar: ADR-015. Volgende: EM.

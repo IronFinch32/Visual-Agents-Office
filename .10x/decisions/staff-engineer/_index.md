@@ -13,3 +13,4 @@
 - [no-directie](no-directie.md)
 - [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)
 - [lounge-pool](lounge-pool.md) — volg darts-patroon; puur module + node:test
+- [session-sync](session-sync.md) — pure tenx.js, CommonJS-hook zonder deps
