@@ -28,7 +28,6 @@ export const DEPTS = {
   quality: { label: 'Kwaliteit', rug: '#7a6a3f', roles: ['qa', 'security'] },
   operations: { label: 'Operations', rug: '#7a4d3f', roles: ['devops', 'sre'] },
   lounge: { label: 'Lounge', rug: '#3f6f73', roles: [] },
-  ceo: { label: 'Directie', rug: '#6a5440', roles: [] },
 };
 
 // Per plugin flavor (ADR-007): department and default role per phase.

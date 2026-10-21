@@ -22,7 +22,7 @@ Gebruik je de [10x-team plugin](https://github.com/Jaan-Mustafa/10x-Team), dan k
 - **Poortwachter**: wordt er code geschreven terwijl er nog geen ADR is, of vóór fase 4, dan gaat er een rode zwaailamp aan en verschijnt er een waarschuwing in de zijbalk.
 - **Stempels**: na een QA- of security-review in `.10x/reviews/` komt er een groene stempel (✓) of een rode (✗ bij afgekeurd, blocker of fail).
 - **Klik op een teamlid** om het begin van zijn nieuwste beslissing in de zijbalk te lezen.
-- **Directiekamer: jij bent de CEO.** Stuur je een prompt, dan loopt de CEO naar de vergaderzaal voor een korte stand-up met je opdracht in een ballon. Wacht iemand op jou, dan loopt die naar je deur en wacht daar met zijn vraag; meerdere wachtenden vormen een rij, en het postbakje op je bureau telt mee.
+- **Jij bent de CEO, op bezoek.** Een teamkamer heeft geen eigen directiekamer; de lounge is daardoor dubbel zo breed. Stuur je een prompt, dan komt de CEO binnen via de deur voor een korte stand-up met je opdracht in een ballon, en vertrekt daarna weer. Bij het opleveringsfeest viert de CEO mee. Wacht iemand op jou, dan loopt die naar de deur en wacht daar met zijn vraag; meerdere wachtenden vormen een rij.
 - **Echte overdracht**: rondt een fase af, dan brengt de vorige rol een map naar het bureau van de volgende ("Overdracht: …" / "Ik pak het op!") en gaat daarna koffie halen.
 - **Leven in de lounge**: wie niet aan de beurt is, haalt af en toe koffie en kletst even; rollen van afgeronde fases vaker.
 - **Flexplekken**: subagents (Explore e.d.) zitten op een krukje naast het bureau van de rol die ze aanstuurt; klaar, dan naar de lounge.
