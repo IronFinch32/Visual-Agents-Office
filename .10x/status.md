@@ -71,7 +71,7 @@
 - [x] Phase 4: Planning
 - [x] Phase 5: Implementation
 - [x] Phase 6: Verification
-- [ ] Phase 7: Delivery
+- [x] Phase 7: Delivery
 
 ## Progress
 - Spec goedgekeurd: `.10x/specs/2026-10-21-ceo-floor-design.md`
@@ -87,3 +87,7 @@
 ## Verification
 - QA approved (70/70, demo), security approved, design approved — `reviews/2026-10-21-ceo-floor-*.md`
 - Release-ready; echte CEO-run in de app volgt na `ceo-mode`
+
+## Delivery
+- Service herstart (launchctl kickstart), :4747 draait de nieuwe code — 2026-10-21
+- Sign-off: feature af; live CEO-run in de app volgt zodra `10x-Team-Plus:ceo` er is
