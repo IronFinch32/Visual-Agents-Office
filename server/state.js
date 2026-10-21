@@ -1,5 +1,6 @@
 // Pure state machine: Claude Code hook events -> agents in the office.
 // No I/O here so it is easy to test.
+import { isCeoSkill, isCeoPrompt } from './tenx.js';
 
 export const LIMITS = { task: 140, activity: 80, reason: 120, name: 40, tool: 60 };
 export const STALE_MS = 30 * 60 * 1000;
@@ -13,7 +14,8 @@ const WAITING_NOTIFICATIONS = new Set(['permission_prompt', 'idle_prompt', 'elic
  * Injected so this module stays free of I/O.
  */
 export function createState({ projectRoot = (cwd) => cwd } = {}) {
-  return { agents: new Map(), projectRoot };
+  // ceoSeen: a CEO session existed since the server started (ADR-009); 10x sessions then get a room each.
+  return { agents: new Map(), projectRoot, ceoSeen: false };
 }
 
 export function truncate(value, max) {
@@ -165,6 +167,13 @@ export function applyEvent(state, evt, now = Date.now()) {
     return true;
   }
 
+  // The CEO session is recognised by its skill or prompt and stays CEO until SessionEnd.
+  if (!evt.agent_id && ((name === 'PreToolUse' && evt.tool_name === 'Skill' && isCeoSkill(evt.tool_input?.skill || evt.tool_input?.name))
+    || (name === 'UserPromptSubmit' && isCeoPrompt(evt.prompt)))) {
+    session.ceo = true;
+    state.ceoSeen = true;
+  }
+
   // Events coming from inside a subagent carry agent_id.
   const target = evt.agent_id ? subAgent(state, evt, session, now) : session;
   target.updatedAt = now;
@@ -270,4 +279,19 @@ export function prune(state, now = Date.now()) {
 
 export function snapshot(state) {
   return [...state.agents.values()].map(({ pendingSubagentTask, ...a }) => a);
+}
+
+/**
+ * Which room each agent is drawn in (ADR-009): the CEO session and its subagents on the CEO floor,
+ * a session in a 10x project its own room once a CEO has been seen, everything else per project.
+ * Mutates and returns the snapshot agents.
+ */
+export function assignRooms(agents, { ceoSeen = false, isTenx = () => false } = {}) {
+  const ceoSessions = new Set(agents.filter((a) => a.kind === 'session' && a.ceo).map((a) => a.id));
+  for (const a of agents) {
+    if (ceoSessions.has(a.sessionId)) a.room = 'ceo';
+    else if (ceoSeen && isTenx(a.projectKey)) a.room = `session:${a.sessionId}`;
+    else a.room = a.projectKey;
+  }
+  return agents;
 }

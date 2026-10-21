@@ -36,9 +36,14 @@ const ACTIVE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 // Kept for compatibility with ADR-006 callers.
 export const PHASE_DEPT = FLAVORS.classic.depts;
 
+// CEO mode (ADR-009): one session above all projects that starts a work session per idea.
+// It is not 10x work itself, so these must never enable a 10x office or reset its phase.
+export const isCeoSkill = (skill) => /^10x-team-plus:ceo$/i.test(String(skill || '').trim());
+export const isCeoPrompt = (prompt) => /^\s*\/10x-team-plus:ceo\b/i.test(String(prompt || ''));
+
 /** Signals that a project uses 10x-Team-Plus. */
 export function isPlusSignal({ skill, path, statusText } = {}) {
-  if (skill && /^10x-team-plus:/i.test(skill)) return true;
+  if (skill && /^10x-team-plus:/i.test(skill) && !isCeoSkill(skill)) return true;
   if (path && /\/\.10x\/decisions\/(ux|ui)-designer\//.test(norm(path))) return true;
   if (statusText && /phase\s*7|experience design/i.test(statusText)) return true;
   return false;
@@ -274,12 +279,12 @@ export function createTenx({ fs, now = () => Date.now() }) {
 
   /** Feed a hook event (after the agent state was updated). Returns true when 10x state changed. */
   function onEvent(evt, agent) {
-    if (!agent?.projectKey || agent.projectKey === 'unknown') return false;
+    if (!agent?.projectKey || agent.projectKey === 'unknown' || agent.ceo) return false;
     const p = project(agent.projectKey);
     const t = now();
     let exact = null;
     if (!evt.agent_id) p.lastSession = agent.sessionId;
-    if (evt.hook_event_name === 'UserPromptSubmit' && /10x-team/i.test(evt.prompt || '')) {
+    if (evt.hook_event_name === 'UserPromptSubmit' && /10x-team/i.test(evt.prompt || '') && !isCeoPrompt(evt.prompt)) {
       // A new /10x-team run starts with a brainstorm, whatever status.md says about earlier features.
       p.enabled = true;
       p.newRun = { session: agent.sessionId, at: t };
@@ -290,7 +295,7 @@ export function createTenx({ fs, now = () => Date.now() }) {
       const input = evt.tool_input || {};
       if (evt.tool_name === 'Skill') {
         exact = roleFromSkill(input.skill || input.name);
-        if (/^10x-team(-plus)?:/i.test(input.skill || '')) p.enabled = true;
+        if (/^10x-team(-plus)?:/i.test(input.skill || '') && !isCeoSkill(input.skill)) p.enabled = true;
         if (isPlusSignal({ skill: input.skill })) p.flavor = 'plus';
       }
       const path = toolPath(input);

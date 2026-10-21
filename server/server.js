@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createState, applyEvent, prune, snapshot } from './state.js';
+import { createState, applyEvent, prune, snapshot, assignRooms } from './state.js';
 import { createTenx } from './tenx.js';
 
 const WEB_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'web');
@@ -65,7 +65,10 @@ export function createServer({ debug = false, projectRoot = gitRootResolver(), f
 
   function fullSnapshot() {
     const agents = snapshot(state);
-    return { agents, tenx: tenx.snapshot(new Set(agents.map((a) => a.projectKey))), now: Date.now() };
+    const ceoIds = new Set(agents.filter((a) => a.ceo).map((a) => a.id));
+    const tx = tenx.snapshot(new Set(agents.filter((a) => !ceoIds.has(a.sessionId)).map((a) => a.projectKey)));
+    assignRooms(agents, { ceoSeen: state.ceoSeen, isTenx: (k) => !!tx[k] });
+    return { agents, tenx: tx, now: Date.now() };
   }
 
   function send(res) {
