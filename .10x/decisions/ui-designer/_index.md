@@ -1,0 +1,7 @@
+# UI Designer — Index
+
+## Principles
+- Hergebruik de pixel-sprites en het palet in `web/sprites.js` en `web/tenx-sprites.js`; geen losse kleuren.
+
+## Active features
+- [ceo-floor](ceo-floor.md)
