@@ -500,11 +500,20 @@ export function drawBadge(ctx, cx, cy, text, color, size = 7) {
   ctx.textAlign = 'left';
 }
 
-export function drawBubble(ctx, cx, bottomY, text, { border = C.trim, bold = false, maxW = 60, minX = 0, maxX = Infinity } = {}) {
-  ctx.font = `${bold ? '600 ' : ''}6px ${FONT}`;
+// `header` ({ text, color }) adds a small top line with a colour block, e.g. the project the agent works for.
+export function drawBubble(ctx, cx, bottomY, text, { border = C.trim, bold = false, maxW = 60, minX = 0, maxX = Infinity, header = null } = {}) {
+  const textFont = `${bold ? '600 ' : ''}6px ${FONT}`;
+  const headFont = `600 5px ${FONT}`;
+  ctx.font = textFont;
   const label = fit(ctx, text, maxW - 8);
-  const w = Math.ceil(ctx.measureText(label).width) + 8;
-  const h = 11;
+  let w = Math.ceil(ctx.measureText(label).width) + 8;
+  let head = null;
+  if (header) {
+    ctx.font = headFont;
+    head = fit(ctx, header.text, maxW - 13);
+    w = Math.max(w, Math.ceil(ctx.measureText(head).width) + 13);
+  }
+  const h = head ? 18 : 11;
   let x = Math.round(cx - w / 2);
   x = Math.max(minX + 1, Math.min(x, maxX - w - 1));
   const y = Math.round(bottomY - h - 3);
@@ -515,9 +524,16 @@ export function drawBubble(ctx, cx, bottomY, text, { border = C.trim, bold = fal
   rect(ctx, Math.round(cx) - 1, y + h, 3, 1, border);
   rect(ctx, Math.round(cx), y + h + 1, 1, 2, border);
   rect(ctx, Math.round(cx), y + h, 1, 1, C.bubble);
-  ctx.fillStyle = C.bubbleText;
   ctx.textBaseline = 'middle';
-  ctx.fillText(label, x + 4, y + h / 2 + 0.5);
+  if (head) {
+    rect(ctx, x + 4, y + 2, 3, 3, header.color || C.trim);
+    ctx.font = headFont;
+    ctx.fillStyle = '#5a5f73';
+    ctx.fillText(head, x + 9, y + 4);
+    ctx.font = textFont;
+  }
+  ctx.fillStyle = C.bubbleText;
+  ctx.fillText(label, x + 4, y + h - 5.5 + 0.5);
 }
 
 export const SOURCE_TAG = {

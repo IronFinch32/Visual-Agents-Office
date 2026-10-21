@@ -16,6 +16,7 @@ Het kantoor is **één bedrijf** dat op één scherm past, hoeveel sessies je oo
 
 - **Afdelingen**: Vergaderzaal, Strategie, Design, Architectuur, Planning, Engineering, Kwaliteit, Operations, een **Flexwerkplek** en de **Lounge**. Elke rol heeft een vaste medewerker met een eigen uiterlijk.
 - **Projectmappen**: elke werksessie krijgt een eigen kleur. De map ligt op het bureau van de rol die er nu aan werkt; op het naambordje staat de rol en het project ("SDE · webshop"). Wisselt de rol of de fase, dan loopt de medewerker met de map naar het volgende bureau.
+- **Tekstballonnen** hebben bovenaan het project in zijn kleur ("■ webshop"), daaronder wat de medewerker doet. Zo zie je meteen wie voor welk project bezig is; de rand van de ballon blijft de status (werkt, wacht, klaar).
 - **Collega's**: hebben twee projecten tegelijk dezelfde rol nodig, dan komt er een collega binnen ("SDE 2") met een eigen bureau; is het werk klaar, dan gaat die weer. Een derde project in dezelfde rol komt als stapel (`+1`) op het bureau.
 - **Vergaderzaal**: elk project in fase 0 (of dat op jouw antwoord wacht in een brainstorm) krijgt een eigen tafel met de PM.
 - **Flexwerkplek**: sessies zonder `.10x/` (ook Codex) krijgen hier een bureau met projectnaam en `claude`/`codex`.

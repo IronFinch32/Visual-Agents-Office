@@ -167,6 +167,12 @@ export function createProjectColors(palette = PROJECT_COLORS) {
   };
 }
 
+/** Top line of an agent's speech bubble: which project it works for, or null when unknown. */
+export function bubbleHeader(c) {
+  const name = String(c?.project || '').trim();
+  return name && name !== '?' ? { text: name, color: c.color } : null;
+}
+
 /** Short project label for nameplates: "Visual Agents Office" → "Visual A…" at 8 characters. */
 export function shortName(name, max = 8) {
   const s = String(name || '?');

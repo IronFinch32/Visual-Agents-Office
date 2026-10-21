@@ -15,7 +15,7 @@ import { createNav } from './nav.js';
 import { createPoolGame, POCKETS, BALL_R } from './pool.js';
 import {
   WALL_H, SLOTS, TABLES, FLEX_PER_SPAN, companyLayout, deriveCases, unknownRoles, createStaffing,
-  createProjectColors, shortName,
+  createProjectColors, shortName, bubbleHeader,
 } from './company-model.js';
 
 const WALK_SPEED = 60;
@@ -523,9 +523,9 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick } = {}) {
     drawBubble(ctx, ch.x + 6, ch.y - (ch.seatedNow ? 19 : 22), ch.say.text, { maxW: 110, minX: 0, maxX: L.W, border: '#f1c40f', bold: true });
   }
 
-  function drawAgentBubble(ch, a, t, doneText) {
+  function drawAgentBubble(ch, a, t, doneText, c) {
     const headY = ch.y - (ch.seatedNow ? 17 : 20);
-    const opts = { maxW: 110, minX: 0, maxX: L.W };
+    const opts = { maxW: 110, minX: 0, maxX: L.W, header: bubbleHeader(c) };
     if (a.status === 'waiting') {
       drawBubble(ctx, ch.x + 10, headY - 2, a.waitingReason || 'Wacht op je input', { ...opts, border: C.waiting, bold: true });
       if (Math.sin(t * 7) > -0.2) drawBadge(ctx, ch.x - 9, headY - 2, '!', C.waiting, 8);
@@ -688,7 +688,7 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick } = {}) {
           if (failed && atDesk) overlays.push(() => drawSmoke(ctx, ch.x, ch.y - 18, (now - a.failedAt) / 1000));
           if (a && home && !ch.hidden) {
             if (a.status === 'waiting') spots.push({ x: ch.x, y: ch.y - 10 });
-            overlays.push(() => drawAgentBubble(ch, a, t, a.task ? `Klaar: ${a.task}` : null));
+            overlays.push(() => drawAgentBubble(ch, a, t, a.task ? `Klaar: ${a.task}` : null, c));
           }
           overlays.push(() => drawSay(ch, t));
           if (hl(c)) glow.push(atTable ? null : { x: d.colX - 1, y: d.y - 24, w: COL_W, h: 56, color: c.color });
@@ -721,7 +721,7 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick } = {}) {
         scene.push({ y: ch.seatedNow ? ch.y - 2 : ch.y, draw: drawChar(ch, null, poseOf(ch, a, home), ch.seatedNow) });
         if (home) {
           if (a.status === 'waiting') spots.push({ x: ch.x, y: ch.y - 10 });
-          overlays.push(() => drawAgentBubble(ch, a, t, null));
+          overlays.push(() => drawAgentBubble(ch, a, t, null, c));
           if (a.status === 'working' && lightPhase !== 'dag') lamps.push({ x: ch.x, y: ch.y - 6 });
         }
       }

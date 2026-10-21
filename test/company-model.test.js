@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  companyLayout, deriveCases, createStaffing, stableSlots, createProjectColors, unknownRoles, shortName,
+  companyLayout, deriveCases, createStaffing, stableSlots, createProjectColors, unknownRoles, shortName, bubbleHeader,
   BUILTIN_DEPARTMENTS, PROJECT_COLORS,
 } from '../web/company-model.js';
 
@@ -133,4 +133,11 @@ test('unknownRoles and shortName', () => {
   assert.deepEqual(unknownRoles([tenxCase('a', 'sde'), tenxCase('b', 'data-scientist'), tenxCase('c', 'x', { shipped: true })], null), ['data-scientist']);
   assert.equal(shortName('Visual Agents Office'), 'Visual …');
   assert.equal(shortName('Aruba'), 'Aruba');
+});
+
+test('speech bubble header names the project in its colour, or nothing when unknown', () => {
+  assert.deepEqual(bubbleHeader({ project: 'Aruba Tour Guide', color: '#4ea3ff' }), { text: 'Aruba Tour Guide', color: '#4ea3ff' });
+  assert.equal(bubbleHeader({ project: '?', color: '#fff' }), null);
+  assert.equal(bubbleHeader({ project: '  ', color: '#fff' }), null);
+  assert.equal(bubbleHeader(null), null);
 });
