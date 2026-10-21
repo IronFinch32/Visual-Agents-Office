@@ -1,1 +1,1 @@
-{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "session-sync", "task": "T1 eigenaar en stand per sessie in tenx.js", "updatedAt": "2026-10-21T16:56:38Z" }
+{ "role": "qa", "phase": 6, "phaseName": "Verification", "feature": "session-sync", "task": "Live check: stand per sessie en juiste rol", "updatedAt": "2026-10-21T17:00:08Z" }

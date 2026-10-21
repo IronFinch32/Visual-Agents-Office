@@ -11,3 +11,4 @@ No database in this project (in-memory state by design, ADR-001).
 - [no-directie](no-directie.md)
 - [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)
 - [lounge-pool](lounge-pool.md) — n.v.t. (geen data)
+- [session-sync](session-sync.md) — n.v.t., in-memory

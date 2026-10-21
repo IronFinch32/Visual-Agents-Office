@@ -228,14 +228,14 @@
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
+- [x] Phase 5: Implementation
 - [ ] Phase 6: Verification
 - [ ] Phase 7: Delivery
 
 ## Progress
 - Drie punten van de CEO: (1) nieuwe werksessie toont even de oude status, (2) werkende rol klopt niet altijd met wat je ziet, (3) verder werken zonder /10x-team houdt het kantoor/de CEO niet bij.
-- [ ] T1 tenx.js eigenaar/stand/rol/mtime
-- [ ] T2 building.js
-- [ ] T3 tests
-- [ ] T4 plugin-hook
+- [x] T1 tenx.js eigenaar/stand/rol/mtime
+- [x] T2 building.js
+- [x] T3 tests
+- [x] T4 plugin-hook
 - [ ] T5 README, tests, live

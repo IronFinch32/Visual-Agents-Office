@@ -8,3 +8,5 @@ Volgende: UX/UI — alleen de bestaande kamer krijgt de juiste stand per sessie.
 Design klaar: ADR-015. Volgende: EM.
 
 Planning klaar (T1–T5). Volgende: SDE.
+
+Gebouwd: kantoor (zie sde/session-sync.md) en plugin-hook. Volgende: QA, security, design-review; live check na service-herstart.
