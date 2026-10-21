@@ -16,3 +16,4 @@
 - [ceo-floor](ceo-floor.md) — ADR-009
 - [team-lounge-darts](team-lounge-darts.md) — ADR-010
 - [ceo-persist](ceo-persist.md)
+- [no-directie](no-directie.md) — ADR-012

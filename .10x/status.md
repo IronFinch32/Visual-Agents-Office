@@ -142,3 +142,20 @@
 
 ## Delivery
 - Service herstart 2026-10-21; live zelftest geslaagd. De lopende CEO-sessie verschijnt na één nieuw CEO-signaal en blijft daarna over herstarts heen.
+
+# Status — no-directie
+
+- [x] Phase 0: Brainstorming
+- [x] Phase 1: Strategy
+- [x] Phase 2: Experience Design
+- [x] Phase 3: Design
+- [x] Phase 4: Planning
+- [ ] Phase 5: Implementation
+- [ ] Phase 6: Verification
+- [ ] Phase 7: Delivery
+
+## Progress
+- Gebruiker: Directie-zone altijd weg uit teamkamers; CEO komt op bezoek bij stand-up/feest (ADR-012).
+- [ ] T1 tenx-room.js: lay-out, wachtrij bij de deur, CEO-meubilair weg, CEO-bezoek
+- [ ] T2 README bijwerken
+- [ ] T3 npm test + browsercheck, service herstarten
