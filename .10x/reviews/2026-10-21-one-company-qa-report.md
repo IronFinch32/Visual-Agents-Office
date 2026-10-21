@@ -24,6 +24,8 @@
 ## Bugs
 - Gevonden en opgelost: vertrekkende collega/subagent bleef staan als het pad de deur niet precies haalde (fix 5f19dac).
 
+## Live (service :4747 na herstart)
+- Echte `departments.json` uit de geïnstalleerde plugin gevonden (8 afdelingen); deze werksessie verschijnt aan het DevOps-bureau met projectlabel; geen console-fouten.
+
 ## Not run
-- Echte `departments.json` uit de plugin-cache: de geïnstalleerde plugin heeft het bestand nog niet (wacht op plugin-update); gedekt door unit-tests en de browser-injectie.
 - Windows: niet getest (zoals de rest van het project).

@@ -255,7 +255,7 @@
 - [x] Phase 4: Planning
 - [x] Phase 5: Implementation
 - [x] Phase 6: Verification
-- [ ] Phase 7: Delivery
+- [x] Phase 7: Delivery
 
 ## Progress
 - Idee van de CEO: één bedrijf met afdelingen in plaats van een heel bedrijf per sessie; sessies lopen van afdeling naar afdeling.
@@ -270,3 +270,6 @@
 
 ## Verification
 - QA Pass, security Approved, design Approved with notes — `reviews/2026-10-21-one-company-*.md`
+
+## Delivery
+- Live op :4747 (service herstart 2026-10-21), departments.json uit de plugin gelezen. Niets gepusht.
