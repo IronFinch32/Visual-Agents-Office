@@ -22,3 +22,4 @@
 - [session-sync](session-sync.md) — Pass
 - [one-company](one-company.md) — Pass, 102/102
 - [bubble-project-label](bubble-project-label.md) — Pass
+- [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)

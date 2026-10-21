@@ -14,3 +14,4 @@ No database in this project (in-memory state by design, ADR-001).
 - [session-sync](session-sync.md) — n.v.t., in-memory
 - [one-company](one-company.md) — geen data; departments.json read-only
 - [bubble-project-label](bubble-project-label.md) — n.v.t.
+- [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)

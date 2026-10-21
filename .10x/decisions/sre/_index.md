@@ -15,3 +15,4 @@
 - [session-sync](session-sync.md) — runbook stand per sessie
 - [one-company](one-company.md) — runbook bedrijf/departments
 - [bubble-project-label](bubble-project-label.md) — geen nieuwe monitoring
+- [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)

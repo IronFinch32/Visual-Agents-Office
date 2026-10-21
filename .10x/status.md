@@ -306,16 +306,23 @@
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
-- [ ] Phase 8: Launch
+- [x] Phase 5: Implementation
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
+- [x] Phase 8: Launch — skipped (nothing to launch: intern hulpmiddel)
 
 ## Progress
 - Idee van de CEO: de nieuwe afdelingen van 10x-Team-Plus 0.5.0-plus.1 (Marketing & Growth, Sales & Pricing, Customer Success, Legal & Finance) en Phase 8 Launch ook in het kantoor.
 - Gebruiker koos: volwaardig (herkenning + eigen looks), indeling 2 rijen. Spec `specs/2026-10-22-go-to-market-departments-design.md` (3ce6584). ADR-018.
-- [ ] T1 server: rollen, fase 8, klaar-regel + tests
-- [ ] T2 browser-model: rollen, afdelingen, fase 8, fallback + tests
-- [ ] T3 accessoires
-- [ ] T4 legacy kamerweergave afknippen
-- [ ] T5 browsercheck
+- [x] T1 server: rollen, fase 8, klaar-regel + tests
+- [x] T2 browser-model: rollen, afdelingen, fase 8, fallback + tests
+- [x] T3 accessoires
+- [x] T4 legacy kamerweergave afknippen
+- [x] T5 browsercheck
+- Code: dd7becf · tests 107/107
+
+## Verification
+- QA Pass, security Approved, design Approved — `reviews/2026-10-22-go-to-market-departments-*.md`
+
+## Delivery
+- Live op :4747 (service herstart 2026-10-22), 12 afdelingen uit de plugin. Niets gepusht.

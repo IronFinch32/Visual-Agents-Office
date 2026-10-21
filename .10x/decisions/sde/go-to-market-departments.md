@@ -1,0 +1,3 @@
+# SDE — go-to-market-departments
+- Gebouwd (dd7becf): T1 server (`ROLES` +5, `FLAVORS.plus` fase 8 `marketing` + `optionalLast`, `parsePhase` → `last`, `activeBehind` voor skipped Launch, `parseActive` 0–8, `launch/` en launch-review → PMM, `guessRole` voor fase 8, plus-signaal); T2 `tenx-sprites.js` (ROLE_INFO, DEPTS, FLAVOR_PHASES) + `BUILTIN_DEPARTMENTS` met contract-fasen; T3 accessoires megafoon/telefoon/weegschaal/rekenmachine (CS hergebruikt headset); T4 `tenx-room.js` knipt fasen af op eigen zones; T5 demo-10x speelt CFO/Sales/Legal in Strategie en het Launch-team.
+- Afwijking: geen. Tech debt: rollenlijst op drie plekken (ADR-018).
