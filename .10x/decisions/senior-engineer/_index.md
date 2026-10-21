@@ -10,3 +10,4 @@
 - [no-directie](no-directie.md)
 - [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)
 - [lounge-pool](lounge-pool.md) — aanpak per taak
+- [session-sync](session-sync.md) — claim/freeze, lezen claimt niet
