@@ -1,1 +1,1 @@
-{ "role": "engineering-manager", "phase": 4, "phaseName": "Planning", "feature": "one-company", "task": "Taken opdelen voor één bedrijf", "updatedAt": "2026-10-21T21:34:49Z" }
+{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "one-company", "task": "T1 departments.js laden en in de snapshot", "updatedAt": "2026-10-21T21:35:05Z" }

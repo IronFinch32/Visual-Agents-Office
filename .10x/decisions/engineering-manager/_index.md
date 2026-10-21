@@ -13,3 +13,4 @@
 - [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)
 - [lounge-pool](lounge-pool.md) — 4 taken
 - [session-sync](session-sync.md) — T1–T5
+- [one-company](one-company.md) — T1–T6, ~10 u

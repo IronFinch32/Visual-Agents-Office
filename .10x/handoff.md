@@ -1,5 +1,4 @@
 # Handoff — one-company
 
-**Van:** Architect/Staff → **Naar:** EM
-- ADR-016 (`adrs/016-one-company-with-departments.md`).
-- Componenten en grenzen: `decisions/architect/one-company.md`; patronen: `decisions/staff-engineer/one-company.md`.
+**Van:** EM/Senior → **Naar:** SDE
+Taken T1–T6 in `decisions/engineering-manager/one-company.md`, aanpak in `decisions/senior-engineer/one-company.md`. ADR-016.
