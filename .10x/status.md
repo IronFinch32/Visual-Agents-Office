@@ -117,3 +117,21 @@
 
 ## Delivery
 - Service herstart (launchctl kickstart), :4747 serveert de nieuwe code — 2026-10-21
+
+# Status — ceo-persist
+
+- [x] Phase 0: Brainstorming
+- [x] Phase 1: Strategy
+- [x] Phase 2: Experience Design — skipped (geen nieuwe UI; bestaand gedrag van setFloor)
+- [x] Phase 3: Design
+- [x] Phase 4: Planning
+- [ ] Phase 5: Implementation
+- [ ] Phase 6: Verification
+- [ ] Phase 7: Delivery
+
+## Progress
+- Vervolg op team-lounge-darts: na een herstart vergat de server de CEO-sessie → geen verdieping en CEO-kantoor in elke teamkamer. Gebruiker koos: onthouden over herstart heen (ADR-011).
+- [ ] T1 state.js: ceoSnapshot/restoreCeo (puur) + tests
+- [ ] T2 server.js: ceoStore (bestand), laden bij start, opslaan bij wijziging + test
+- [ ] T3 bin + main: bestand `~/.visual-agents-office/ceo.json`
+- [ ] T4 herstart service, controleren

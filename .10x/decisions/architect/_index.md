@@ -15,3 +15,4 @@
 - [living-office](living-office.md) — ADR-008
 - [ceo-floor](ceo-floor.md) — ADR-009
 - [team-lounge-darts](team-lounge-darts.md) — ADR-010
+- [ceo-persist](ceo-persist.md)
