@@ -1,1 +1,1 @@
-{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "ceo-persist", "task": "CEO-sessie onthouden over herstart", "updatedAt": "2026-10-21T11:34:03Z" }
+{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "ceo-persist", "task": "Opgeleverd, service herstart", "updatedAt": "2026-10-21T11:35:41Z" }

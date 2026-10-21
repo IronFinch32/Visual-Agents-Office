@@ -125,13 +125,20 @@
 - [x] Phase 2: Experience Design — skipped (geen nieuwe UI; bestaand gedrag van setFloor)
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
+- [x] Phase 5: Implementation
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
 
 ## Progress
 - Vervolg op team-lounge-darts: na een herstart vergat de server de CEO-sessie → geen verdieping en CEO-kantoor in elke teamkamer. Gebruiker koos: onthouden over herstart heen (ADR-011).
-- [ ] T1 state.js: ceoSnapshot/restoreCeo (puur) + tests
-- [ ] T2 server.js: ceoStore (bestand), laden bij start, opslaan bij wijziging + test
-- [ ] T3 bin + main: bestand `~/.visual-agents-office/ceo.json`
-- [ ] T4 herstart service, controleren
+- [x] T1 state.js: ceoSnapshot/restoreCeo (puur) + tests
+- [x] T2 server.js: ceoStore (bestand), laden bij start, opslaan bij wijziging + test
+- [x] T3 bin + main: bestand `~/.visual-agents-office/ceo.json`
+- [x] T4 herstart service, controleren
+- Code: commit 1b6e331 · tests 74/74
+
+## Verification
+- QA en security goedgekeurd — `reviews/2026-10-21-ceo-persist-*.md`
+
+## Delivery
+- Service herstart 2026-10-21; live zelftest geslaagd. De lopende CEO-sessie verschijnt na één nieuw CEO-signaal en blijft daarna over herstarts heen.
