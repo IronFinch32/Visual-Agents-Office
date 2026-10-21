@@ -32,7 +32,7 @@ test('a session becomes CEO via its skill and stays CEO; ceoSeen sticks after Se
   applyEvent(st, prompt('c', '/u/Projects', 'Nog een idee'), 3);
   assert.equal(st.agents.get('c').ceo, true);
   assert.equal(st.ceoSeen, true);
-  applyEvent(st, { session_id: 'c', hook_event_name: 'SessionEnd' }, 4);
+  applyEvent(st, { session_id: 'c', hook_event_name: 'SessionEnd', reason: 'clear' }, 4);
   assert.equal(st.agents.has('c'), false);
   assert.equal(st.ceoSeen, true);
 });
@@ -139,11 +139,32 @@ test('the CEO session survives a long wait; a normal session is still pruned (AD
   assert.equal(st.agents.has('c'), false, 'safety net after 12 h');
 });
 
-test('the CEO session still leaves on SessionEnd', () => {
+test('the CEO session survives the app stopping its process and is CEO again on resume (ADR-013)', () => {
   const st = createState();
   applyEvent(st, skill('c', '/u/Projects', '10x-Team-Plus:ceo'), 1);
-  applyEvent(st, { session_id: 'c', cwd: '/u/Projects', hook_event_name: 'SessionEnd' }, 2);
-  assert.equal(st.agents.has('c'), false);
+  applyEvent(st, { session_id: 'c', agent_id: 's1', agent_type: 'Explore', hook_event_name: 'SubagentStart' }, 2);
+  applyEvent(st, { session_id: 'c', cwd: '/u/Projects', hook_event_name: 'SessionEnd', reason: 'other' }, 3);
+  const c = st.agents.get('c');
+  assert.equal(c.ceo, true);
+  assert.equal(c.status, 'done');
+  assert.deepEqual([...st.agents.keys()], ['c'], 'its subagents go home');
+  applyEvent(st, { session_id: 'c', cwd: '/u/Projects', hook_event_name: 'SessionStart', source: 'resume' }, 4);
+  applyEvent(st, prompt('c', '/u/Projects', 'Nog een idee'), 5);
+  assert.equal(st.agents.get('c').status, 'working');
+  assert.deepEqual(assignRooms(snapshot(st)).map((a) => a.room), ['ceo'], 'floor without a new CEO skill call');
+});
+
+test('the CEO session leaves on /clear and logout; other sessions on any SessionEnd', () => {
+  for (const reason of ['clear', 'logout']) {
+    const st = createState();
+    applyEvent(st, skill('c', '/u/Projects', '10x-Team-Plus:ceo'), 1);
+    applyEvent(st, { session_id: 'c', cwd: '/u/Projects', hook_event_name: 'SessionEnd', reason }, 2);
+    assert.equal(st.agents.has('c'), false, reason);
+  }
+  const st = createState();
+  applyEvent(st, { session_id: 'w', cwd: '/u/app', hook_event_name: 'SessionStart' }, 1);
+  applyEvent(st, { session_id: 'w', cwd: '/u/app', hook_event_name: 'SessionEnd', reason: 'other' }, 2);
+  assert.equal(st.agents.has('w'), false);
 });
 
 test('CEO sessions round-trip through ceoSnapshot/restoreCeo; junk and old entries are ignored (ADR-011)', () => {
@@ -167,7 +188,7 @@ test('CEO sessions round-trip through ceoSnapshot/restoreCeo; junk and old entri
   assert.equal(restoreCeo(createState(), saved, 1000 + CEO_STALE_MS + 1), false, 'too old');
 });
 
-test('the server remembers the CEO across a restart and forgets it on SessionEnd (ADR-011)', async () => {
+test('the server remembers the CEO across a restart and forgets it on /clear (ADR-011/013)', async () => {
   const { ceoDir, app } = fixture();
   const file = join(mkdtempSync(join(tmpdir(), 'vao-ceo-')), 'ceo.json');
   const start = async () => {
@@ -191,12 +212,14 @@ test('the server remembers the CEO across a restart and forgets it on SessionEnd
     const s = await o.state();
     const room = Object.fromEntries(s.agents.map((a) => [a.id, a.room]));
     assert.deepEqual(room, { c: 'ceo', w1: 'session:w1' }, 'floor is back without a new CEO skill call');
-    await o.post({ session_id: 'c', hook_event_name: 'SessionEnd' });
+    await o.post({ session_id: 'c', hook_event_name: 'SessionEnd', reason: 'other' });
+    assert.equal((await o.state()).agents.find((a) => a.id === 'c')?.room, 'ceo', 'stays when the app stops the process');
+    await o.post({ session_id: 'c', hook_event_name: 'SessionEnd', reason: 'clear' });
   } finally { o.server.close(); }
 
   o = await start();
   try {
     const s = await o.state();
-    assert.deepEqual(s.agents, [], 'gone after SessionEnd');
+    assert.deepEqual(s.agents, [], 'gone after /clear');
   } finally { o.server.close(); }
 });

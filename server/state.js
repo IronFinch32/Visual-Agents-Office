@@ -4,7 +4,7 @@ import { isCeoSkill, isCeoPrompt } from './tenx.js';
 
 export const LIMITS = { task: 140, activity: 80, reason: 120, name: 40, tool: 60 };
 export const STALE_MS = 30 * 60 * 1000;
-// The CEO session often waits a long time for the user; it stays until SessionEnd, with this as a crash safety net (ADR-010).
+// The CEO session often waits a long time for the user; it stays until /clear or logout, with this as the safety net (ADR-010/013).
 export const CEO_STALE_MS = 12 * 60 * 60 * 1000;
 export const SUBAGENT_DONE_TTL_MS = 10 * 60 * 1000;
 
@@ -165,11 +165,20 @@ export function applyEvent(state, evt, now = Date.now()) {
   session.updatedAt = now;
 
   if (name === 'SessionEnd') {
+    // The app stops an idle session's process (SessionEnd) and resumes it later with the same id:
+    // the CEO session stays, only /clear or logout ends it (ADR-013); CEO_STALE_MS is the safety net.
+    if (session.ceo && evt.reason !== 'clear' && evt.reason !== 'logout') {
+      for (const [id, a] of state.agents) if (a.parentId === session.id) state.agents.delete(id);
+      setStatus(session, 'done', now);
+      session.activity = 'Staat stil';
+      session.tool = '';
+      return true;
+    }
     for (const [id, a] of state.agents) if (a.sessionId === session.id) state.agents.delete(id);
     return true;
   }
 
-  // The CEO session is recognised by its skill or prompt and stays CEO until SessionEnd.
+  // The CEO session is recognised by its skill or prompt and stays CEO (ADR-013).
   if (!evt.agent_id && ((name === 'PreToolUse' && evt.tool_name === 'Skill' && isCeoSkill(evt.tool_input?.skill || evt.tool_input?.name))
     || (name === 'UserPromptSubmit' && isCeoPrompt(evt.prompt)))) {
     session.ceo = true;
