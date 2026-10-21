@@ -19,3 +19,4 @@
 - [no-directie](no-directie.md)
 - [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)
 - [lounge-pool](lounge-pool.md) — Pass — 81/81 + browser
+- [session-sync](session-sync.md) — Pass

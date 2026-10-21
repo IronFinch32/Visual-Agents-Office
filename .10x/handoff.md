@@ -10,3 +10,5 @@ Design klaar: ADR-015. Volgende: EM.
 Planning klaar (T1–T5). Volgende: SDE.
 
 Gebouwd: kantoor (zie sde/session-sync.md) en plugin-hook. Volgende: QA, security, design-review; live check na service-herstart.
+
+Geverifieerd (QA Pass, Security Approved). Volgende: DevOps/SRE.

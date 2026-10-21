@@ -1,1 +1,1 @@
-{ "role": "qa", "phase": 6, "phaseName": "Verification", "feature": "session-sync", "task": "Live check: stand per sessie en juiste rol", "updatedAt": "2026-10-21T17:00:08Z" }
+{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "session-sync", "task": "Service herstart, plugin-hook klaar voor update", "updatedAt": "2026-10-21T17:01:11Z" }

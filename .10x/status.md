@@ -229,7 +229,7 @@
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
 - [x] Phase 5: Implementation
-- [ ] Phase 6: Verification
+- [x] Phase 6: Verification
 - [ ] Phase 7: Delivery
 
 ## Progress
@@ -238,4 +238,7 @@
 - [x] T2 building.js
 - [x] T3 tests
 - [x] T4 plugin-hook
-- [ ] T5 README, tests, live
+- [x] T5 README, tests, live
+
+## Verification
+- QA Pass, security Approved, design goedgekeurd — `reviews/2026-10-21-session-sync-*.md`
