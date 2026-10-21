@@ -13,3 +13,4 @@ No database in this project (in-memory state by design, ADR-001).
 - [lounge-pool](lounge-pool.md) — n.v.t. (geen data)
 - [session-sync](session-sync.md) — n.v.t., in-memory
 - [one-company](one-company.md) — geen data; departments.json read-only
+- [bubble-project-label](bubble-project-label.md) — n.v.t.

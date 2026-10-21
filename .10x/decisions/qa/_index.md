@@ -21,3 +21,4 @@
 - [lounge-pool](lounge-pool.md) — Pass — 81/81 + browser
 - [session-sync](session-sync.md) — Pass
 - [one-company](one-company.md) — Pass, 102/102
+- [bubble-project-label](bubble-project-label.md) — Pass

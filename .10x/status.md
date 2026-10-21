@@ -281,13 +281,20 @@
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
+- [x] Phase 5: Implementation
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
 
 ## Progress
 - Idee van de CEO: tekstballonnen van agents tonen ook voor welk project ze werken.
 - Gebruiker koos: kopregel in projectkleur. Spec `specs/2026-10-21-bubble-project-label-design.md` goedgekeurd (9910450). ADR-017.
-- [ ] T1 bubbleHeader + tests
-- [ ] T2 drawBubble header-optie
-- [ ] T3 drawAgentBubble + browsercheck
+- [x] T1 bubbleHeader + tests
+- [x] T2 drawBubble header-optie
+- [x] T3 drawAgentBubble + browsercheck
+- Code: 9f469e0 · tests 103/103
+
+## Verification
+- QA Pass, security Approved, design Approved — `reviews/2026-10-21-bubble-project-label-*.md`
+
+## Delivery
+- Live op :4747 na herladen (geen herstart nodig). Niets gepusht.

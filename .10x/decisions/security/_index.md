@@ -19,3 +19,4 @@
 - [lounge-pool](lounge-pool.md) — Approved — geen nieuw aanvalsoppervlak
 - [session-sync](session-sync.md) — Approved
 - [one-company](one-company.md) — Approved; departments.json gesaneerd
+- [bubble-project-label](bubble-project-label.md) — Approved

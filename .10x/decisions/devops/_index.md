@@ -15,3 +15,4 @@
 - [lounge-pool](lounge-pool.md) — Ready to release — live via service
 - [session-sync](session-sync.md) — f288581 + plugin 740b06e
 - [one-company](one-company.md) — kickstart, ?weergave=kamers als terugval
+- [bubble-project-label](bubble-project-label.md) — Ready to release

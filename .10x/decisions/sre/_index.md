@@ -14,3 +14,4 @@
 - [lounge-pool](lounge-pool.md) — geen monitoring nodig
 - [session-sync](session-sync.md) — runbook stand per sessie
 - [one-company](one-company.md) — runbook bedrijf/departments
+- [bubble-project-label](bubble-project-label.md) — geen nieuwe monitoring
