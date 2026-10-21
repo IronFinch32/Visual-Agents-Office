@@ -1,1 +1,1 @@
-{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "ceo-floor", "task": "T1: CEO-herkenning en valkuilen in tenx.js", "updatedAt": "2026-10-21T07:21:05Z" }
+{ "role": "qa", "phase": 6, "phaseName": "Verification", "feature": "ceo-floor", "task": "Testplan en regressie CEO-verdieping", "updatedAt": "2026-10-21T11:02:02Z" }

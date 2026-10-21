@@ -10,3 +10,4 @@
 - [tenx-mode](tenx-mode.md)
 - [tenx-plus](tenx-plus.md)
 - [living-office](living-office.md)
+- [ceo-floor](ceo-floor.md)

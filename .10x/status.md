@@ -69,16 +69,17 @@
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
+- [x] Phase 5: Implementation
 - [ ] Phase 6: Verification
 - [ ] Phase 7: Delivery
 
 ## Progress
 - Spec goedgekeurd: `.10x/specs/2026-10-21-ceo-floor-design.md`
 - Repo verhuisd naar `~/Documents/Claude Projects/Visual Agents Office`; LaunchAgent aangepast en service herstart (2026-10-21)
-- [ ] T1 Server: CEO-herkenning + valkuilen + tests
-- [ ] T2 Server: assignRooms + room in snapshot + tests
-- [ ] T3 Client: building groepeert op room, verdieping-rij
-- [ ] T4 Client: ceo-floor.js
-- [ ] T5 Client: tenx-room setFloor
-- [ ] T6 Demo VAO_DEMO_10X=ceo + visuele controle
+- [x] T1 Server: CEO-herkenning + valkuilen + tests
+- [x] T2 Server: assignRooms + room in snapshot + tests
+- [x] T3 Client: building groepeert op room, verdieping-rij
+- [x] T4 Client: ceo-floor.js
+- [x] T5 Client: tenx-room setFloor
+- [x] T6 Demo VAO_DEMO_10X=ceo + visuele controle
+- Tests 70/70 (`npm test`, 7 nieuw in `test/ceo.test.js`); demo `VAO_DEMO_10X=ceo` visueel gecontroleerd op :4848
