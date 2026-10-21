@@ -1,1 +1,1 @@
-{ "role": "qa", "phase": 6, "phaseName": "Verification", "feature": "one-company", "task": "Testen: overdracht, collega's, flex, wachten, legacy-weergave", "updatedAt": "2026-10-21T21:44:06Z" }
+{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "one-company", "task": "Service herstarten en live controleren", "updatedAt": "2026-10-21T21:46:19Z" }

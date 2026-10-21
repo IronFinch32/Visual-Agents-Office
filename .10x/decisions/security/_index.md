@@ -18,3 +18,4 @@
 - [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)
 - [lounge-pool](lounge-pool.md) — Approved — geen nieuw aanvalsoppervlak
 - [session-sync](session-sync.md) — Approved
+- [one-company](one-company.md) — Approved; departments.json gesaneerd
