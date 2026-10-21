@@ -245,3 +245,17 @@
 
 ## Delivery
 - Kantoor f288581 live (service herstart 2026-10-21). Plugin-hook 740b06e in 10x-Team-Plus (0.4.0-plus.7), actief na plugin-update. Niets gepusht.
+
+# Status — one-company
+
+- [ ] Phase 0: Brainstorming
+- [ ] Phase 1: Strategy
+- [ ] Phase 2: Experience Design
+- [ ] Phase 3: Design
+- [ ] Phase 4: Planning
+- [ ] Phase 5: Implementation
+- [ ] Phase 6: Verification
+- [ ] Phase 7: Delivery
+
+## Progress
+- Idee van de CEO: één bedrijf met afdelingen in plaats van een heel bedrijf per sessie; sessies lopen van afdeling naar afdeling.
