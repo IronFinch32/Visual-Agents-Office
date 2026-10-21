@@ -166,3 +166,25 @@
 
 ## Delivery
 - Webbestanden live via de draaiende service (:4747), geen herstart nodig — 2026-10-21
+
+# Status — ceo-sessionend
+
+- [x] Phase 0: Brainstorming
+- [x] Phase 1: Strategy
+- [x] Phase 2: Experience Design — skipped (geen nieuwe UI; gedrag server-side)
+- [x] Phase 3: Design
+- [x] Phase 4: Planning
+- [ ] Phase 5: Implementation
+- [ ] Phase 6: Verification
+- [ ] Phase 7: Delivery
+
+## Diagnose
+- CEO-sessie 07ea0ca2 houdt sinds 09:18 hetzelfde id; service draait sinds 13:35 zonder herstart.
+- 13:45 laatste beurt → app zet het idle CLI-proces stil → hook `SessionEnd` → `applyEvent` wist de sessie (en `ceo: true`), `ceo.json` wordt `[]`.
+- 14:10:23 hervat de app dezelfde sessie (SessionStart, zelfde id) → gewone sessie, geen verdieping; pas bij `/10x-Team-Plus:ceo` om 14:12 komt de verdieping terug.
+
+## Progress
+- Gebruiker koos: CEO blijft bij stilzetten; alleen /clear of uitloggen haalt haar weg (ADR-013).
+- [ ] T1 state.js SessionEnd-tak + tests
+- [ ] T2 README bijwerken
+- [ ] T3 npm test, service herstarten, live check

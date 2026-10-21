@@ -1,4 +1,3 @@
-# Handoff — no-directie
+# Handoff — ceo-sessionend
 
-**Status:** opgeleverd (Phase 7), commit d693082, ADR-012.
-- Teamkamers hebben geen Directie meer; de CEO komt op bezoek bij stand-up en feest. Runbook: `decisions/sre/no-directie.md`. Rollback: `git revert d693082`.
+**Status:** Phase 4 klaar, ADR-013. SDE: `server/state.js` SessionEnd-tak voor CEO-sessies (zie senior-engineer/ceo-sessionend.md), tests in `test/ceo.test.js`.

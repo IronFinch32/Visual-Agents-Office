@@ -8,3 +8,4 @@
 - [ceo-floor](ceo-floor.md)
 - [team-lounge-darts](team-lounge-darts.md)
 - [no-directie](no-directie.md)
+- [ceo-sessionend](ceo-sessionend.md) — CEO blijft bij stilzetten door de app (ADR-013)

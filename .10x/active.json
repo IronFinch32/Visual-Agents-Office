@@ -1,1 +1,1 @@
-{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "no-directie", "task": "Opgeleverd, live via de service", "updatedAt": "2026-10-21T11:44:56Z" }
+{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "ceo-sessionend", "task": "SessionEnd laat de CEO-sessie staan", "updatedAt": "2026-10-21T12:16:03Z" }
