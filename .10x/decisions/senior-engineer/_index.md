@@ -12,3 +12,4 @@
 - [lounge-pool](lounge-pool.md) — aanpak per taak
 - [session-sync](session-sync.md) — claim/freeze, lezen claimt niet
 - [one-company](one-company.md) — aanpak per taak, chars-sleutels, staffing
+- [bubble-project-label](bubble-project-label.md) — aanpak per taak

@@ -21,3 +21,4 @@
 - [lounge-pool](lounge-pool.md) — ADR-014: pool.js + modus pool
 - [session-sync](session-sync.md) — ADR-015: eigenaar per project, stand per sessie
 - [one-company](one-company.md) — ADR-016: departments.js, company-model.js, company.js
+- [bubble-project-label](bubble-project-label.md) — ADR-017: header-optie in drawBubble

@@ -14,3 +14,4 @@
 - [lounge-pool](lounge-pool.md) — 4 taken
 - [session-sync](session-sync.md) — T1–T5
 - [one-company](one-company.md) — T1–T6, ~10 u
+- [bubble-project-label](bubble-project-label.md) — 3 taken
