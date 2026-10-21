@@ -50,6 +50,7 @@ export function isPlusSignal({ skill, path, statusText } = {}) {
 }
 
 const GATE_MS = 2 * 60 * 1000;
+const FORGET_MS = 24 * 60 * 60 * 1000;
 const MAX_DECISION_BYTES = 4096;
 
 /** `10x-Team:qa-engineer` → 'qa'. Unknown skills → null. */
@@ -77,6 +78,12 @@ export function roleFromPath(path) {
     if (/qa/i.test(rest)) return 'qa';
   }
   return null;
+}
+
+/** A tool call that changes something in .10x/ (reading status.md is not 10x work). */
+export function isTenxWrite(toolName, path, cmd = '') {
+  if (path && isTenxPath(path)) return ['Write', 'Edit', 'MultiEdit', 'apply_patch', 'NotebookEdit'].includes(toolName);
+  return /\.10x\//.test(cmd) && /(>|\btee\b|\bmv\b|\bcp\b|\brm\b|\bmkdir\b|\bgit\s+(add|commit|mv|rm)\b|\bsed\s+-i\b|\bpython3?\b|\bnode\b)/.test(cmd);
 }
 
 export function isTenxPath(path) {
@@ -215,8 +222,10 @@ export function createTenx({ fs, now = () => Date.now() }) {
     if (!p) {
       p = {
         key, enabled: false, flavor: 'classic', phase: null, done: [], complete: false, adrs: [], reviews: {}, gate: null,
-        handoffAt: 0, roles: new Map(), lastRefresh: 0, active: null, activeOwner: null, lastSession: null, newRun: null,
+        handoffAt: 0, roles: new Map(), lastRefresh: 0, active: null, lastSession: null, newRun: null,
         workload: 0, workPhase: null, kanban: [],
+        // ADR-015: the session that owns the live state; other sessions keep a fresh or frozen view of their own.
+        owner: null, views: new Map(),
       };
       projects.set(key, p);
     }
@@ -251,7 +260,8 @@ export function createTenx({ fs, now = () => Date.now() }) {
     // The plugin's own record of who is working (ADR-008).
     const activeFile = fs.list(dir).find((f) => f.name === 'active.json');
     const active = activeFile ? parseActive(fs.readText(join(dir, 'active.json'))) : null;
-    if (active) active.at = active.at ?? activeFile.mtimeMs;
+    // The file's mtime is when it was really written; updatedAt is typed by Claude and can be off (ADR-015).
+    if (active) active.at = activeFile.mtimeMs ?? active.at;
     p.active = active && now() - active.at < ACTIVE_MAX_AGE_MS ? active : null;
     if (p.active && (p.active.phase === 7 || /^u[xi]-designer$/.test(p.active.role) || /experience design/i.test(p.active.phaseName))) p.flavor = 'plus';
 
@@ -277,37 +287,93 @@ export function createTenx({ fs, now = () => Date.now() }) {
     return p.phase;
   }
 
+  const fromActive = (p) => !!p.active && !(p.newRun && p.active.at < p.newRun.at);
+
+  /** What the owner's room shows: the live project state. */
+  function liveView(p) {
+    const fresh = p.newRun && !fromActive(p);
+    return {
+      phase: effectivePhase(p),
+      done: fresh ? [] : p.done,
+      complete: p.complete && !fresh && !(fromActive(p) && p.active.phase !== null && p.active.phase < lastPhase(p.flavor)),
+      active: fromActive(p) ? { feature: p.active.feature, task: p.active.task, phaseName: p.active.phaseName } : null,
+      workload: p.workload,
+      kanban: p.kanban,
+      handoffAt: p.handoffAt,
+    };
+  }
+
+  const freshView = (p) => ({ phase: 0, done: [], complete: false, active: null, workload: 0, kanban: [], handoffAt: p.handoffAt, at: now() });
+
+  const ownerOf = (p) => p.owner ?? (p.views.has(p.lastSession) ? null : p.lastSession);
+
+  /** The owner's role: active.json, unless the session gave a newer exact signal itself. */
+  function ownerRole(p, sid) {
+    const own = p.roles.get(sid);
+    if (p.newRun && !fromActive(p) && p.newRun.session === sid) return { role: MEETING, guessed: false, at: p.newRun.at };
+    if (fromActive(p) && !(own && !own.guessed && own.at > p.active.at)) return { role: p.active.role, guessed: false, at: p.active.at, source: 'active.json' };
+    return own;
+  }
+
+  /** Session `sid` takes over the live state; the previous owner keeps what it showed (ADR-015). */
+  function claim(p, sid) {
+    if (p.owner === sid) return;
+    const prev = ownerOf(p);
+    if (prev && prev !== sid) {
+      p.views.set(prev, { ...liveView(p), at: now() });
+      const role = ownerRole(p, prev);
+      if (role) p.roles.set(prev, { role: role.role, guessed: role.guessed, at: role.at });
+    }
+    p.owner = sid;
+    p.views.delete(sid);
+  }
+
+  const phaseFor = (p, sid) => (p.views.has(sid) ? p.views.get(sid).phase : effectivePhase(p));
+
   /** Feed a hook event (after the agent state was updated). Returns true when 10x state changed. */
   function onEvent(evt, agent) {
     if (!agent?.projectKey || agent.projectKey === 'unknown' || agent.ceo) return false;
     const p = project(agent.projectKey);
     const t = now();
     let exact = null;
-    if (!evt.agent_id) p.lastSession = agent.sessionId;
+    const sid = agent.sessionId;
+    if (!evt.agent_id) p.lastSession = sid;
+    if (evt.hook_event_name === 'SessionStart' && !evt.agent_id && !['resume', 'compact'].includes(evt.source) && ownerOf(p) !== sid) {
+      // A brand-new session starts at zero, not with the previous feature's state (ADR-015).
+      p.views.set(sid, freshView(p));
+      p.roles.set(sid, { role: MEETING, guessed: false, at: t });
+    }
     if (evt.hook_event_name === 'UserPromptSubmit' && /10x-team/i.test(evt.prompt || '') && !isCeoPrompt(evt.prompt)) {
       // A new /10x-team run starts with a brainstorm, whatever status.md says about earlier features.
       p.enabled = true;
-      p.newRun = { session: agent.sessionId, at: t };
+      claim(p, sid);
+      p.newRun = { session: sid, at: t };
       p.workload = 0;
       return true;
     }
     if (evt.hook_event_name === 'PreToolUse') {
       const input = evt.tool_input || {};
+      const skill = input.skill || input.name;
       if (evt.tool_name === 'Skill') {
-        exact = roleFromSkill(input.skill || input.name);
-        if (/^10x-team(-plus)?:/i.test(input.skill || '') && !isCeoSkill(input.skill)) p.enabled = true;
-        if (isPlusSignal({ skill: input.skill })) p.flavor = 'plus';
+        exact = roleFromSkill(skill);
+        if (/^10x-team(-plus)?:/i.test(skill || '') && !isCeoSkill(skill)) {
+          p.enabled = true;
+          if (!evt.agent_id) claim(p, sid);
+        }
+        if (isPlusSignal({ skill })) p.flavor = 'plus';
       }
       const path = toolPath(input);
       const cmd = evt.tool_name === 'Bash' ? String(input.command || '') : '';
       if (!exact && path) exact = roleFromPath(path);
       if (isPlusSignal({ path })) p.flavor = 'plus';
       const touchesActive = /\/\.10x\/active\.json$/.test(norm(path)) || /\.10x\/active\.json/.test(cmd);
-      if (touchesActive) p.activeOwner = agent.sessionId;
       if ((path && isTenxPath(path)) || /\.10x\//.test(cmd)) {
         p.enabled = true;
+        const writes = isTenxWrite(evt.tool_name, path, cmd);
+        if (writes && !evt.agent_id) claim(p, sid);
         if (/\/\.10x\/handoff\.md$/.test(norm(path))) p.handoffAt = t;
-        if (!touchesActive) p.newRun = null; // real 10x work has started; follow the files again
+        // Real 10x work has started: follow the files again. Reading status.md doesn't count (ADR-015).
+        if (writes && !touchesActive) p.newRun = null;
         p.dirty = true; // re-read after the write lands (PostToolUse)
       }
       if (!p.lastRefresh) refresh(p.key);
@@ -321,8 +387,8 @@ export function createTenx({ fs, now = () => Date.now() }) {
       const bookkeeping = (path && isTenxPath(path) && !exact) || touchesActive;
       if (!bookkeeping) p.workload++;
       if (!evt.agent_id && !bookkeeping) {
-        const role = exact || guessRole(effectivePhase(p), evt.tool_name, input, p.flavor);
-        p.roles.set(agent.sessionId, { role, guessed: !exact, at: t });
+        const role = exact || guessRole(phaseFor(p, sid), evt.tool_name, input, p.flavor);
+        p.roles.set(sid, { role, guessed: !exact, at: t });
       }
       return true;
     }
@@ -331,7 +397,12 @@ export function createTenx({ fs, now = () => Date.now() }) {
       refresh(p.key);
       return true;
     }
-    if (evt.hook_event_name === 'SessionEnd') p.roles.delete(agent.sessionId);
+    // The app stops idle sessions (SessionEnd) and resumes them with the same id: only /clear or logout really ends one.
+    if (evt.hook_event_name === 'SessionEnd' && (evt.reason === 'clear' || evt.reason === 'logout')) {
+      p.roles.delete(sid);
+      p.views.delete(sid);
+      if (p.owner === sid) p.owner = null;
+    }
     if (!p.lastRefresh) { refresh(p.key); return p.enabled; }
     return false;
   }
@@ -341,6 +412,8 @@ export function createTenx({ fs, now = () => Date.now() }) {
     let changed = false;
     for (const p of projects.values()) {
       if (p.gate && t - p.gate.at > GATE_MS) { p.gate = null; changed = true; }
+      // Sessions that ended without /clear keep their view for a resume; forget them after a day.
+      for (const m of [p.views, p.roles]) for (const [sid, v] of m) if (t - v.at > FORGET_MS) m.delete(sid);
       if (t - p.lastRefresh > 15_000) { refresh(p.key); changed = changed || p.enabled; }
     }
     return changed;
@@ -351,24 +424,22 @@ export function createTenx({ fs, now = () => Date.now() }) {
     for (const p of projects.values()) {
       if (!p.enabled || (activeKeys && !activeKeys.has(p.key))) continue;
       const roles = Object.fromEntries(p.roles);
-      const owner = p.activeOwner && p.roles.has(p.activeOwner) ? p.activeOwner : p.lastSession;
-      const fromActive = p.active && !(p.newRun && p.active.at < p.newRun.at);
-      if (fromActive && owner) roles[owner] = { role: p.active.role, guessed: false, at: p.active.at, source: 'active.json' };
-      if (p.newRun && !fromActive) roles[p.newRun.session] = { role: MEETING, guessed: false, at: p.newRun.at };
-      const phase = effectivePhase(p);
+      const owner = ownerOf(p);
+      if (owner) {
+        const role = ownerRole(p, owner);
+        if (role) roles[owner] = role;
+      }
+      const { at, ...live } = { ...liveView(p), at: 0 };
+      // Fresh or frozen views of the other sessions, merged into their rooms by the browser (ADR-015).
+      const sessions = Object.fromEntries([...p.views].map(([sid, { at: _, ...v }]) => [sid, v]));
       out[p.key] = {
         flavor: p.flavor,
-        phase,
-        done: p.newRun && !fromActive ? [] : p.done,
-        complete: p.complete && !(p.newRun && !fromActive) && !(fromActive && p.active.phase !== null && p.active.phase < lastPhase(p.flavor)),
-        active: fromActive ? { feature: p.active.feature, task: p.active.task, phaseName: p.active.phaseName } : null,
-        workload: p.workload,
-        kanban: p.kanban,
+        ...live,
         adrs: p.adrs.map(({ number, title, mtimeMs }) => ({ number, title, mtimeMs })),
         reviews: p.reviews,
         gate: p.gate,
-        handoffAt: p.handoffAt,
         roles,
+        sessions,
       };
     }
     return out;

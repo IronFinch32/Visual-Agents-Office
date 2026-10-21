@@ -112,7 +112,9 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
     for (const [key, r] of rooms) {
       const group = groups.get(key) || [];
       if (key === FLOOR) { r.room.setAgents(group, serverNow); continue; }
-      const tx = tenx[r.projectKey];
+      // A work session that doesn't own the project's live state shows its own fresh or frozen view (ADR-015).
+      const own = key.startsWith('session:') && tenx[r.projectKey]?.sessions?.[key.slice('session:'.length)];
+      const tx = own ? { ...tenx[r.projectKey], ...own } : tenx[r.projectKey];
       ensureType(key, r, !!tx);
       r.room.setAgents(group, serverNow);
       r.room.setTenx?.(tx);

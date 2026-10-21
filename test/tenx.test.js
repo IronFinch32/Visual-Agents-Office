@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -76,8 +76,15 @@ function project() {
   return { root, x };
 }
 
-const agent = (root) => ({ sessionId: 's', projectKey: root });
+const agent = (root, sessionId = 's') => ({ sessionId, projectKey: root });
 const pre = (tool_name, tool_input, extra = {}) => ({ session_id: 's', hook_event_name: 'PreToolUse', tool_name, tool_input, ...extra });
+
+/** Write active.json with its mtime at `t`: the office trusts the file's mtime (ADR-015). */
+function writeActive(x, data, t, updatedAt = new Date(t).toISOString()) {
+  const file = join(x, 'active.json');
+  writeFileSync(file, JSON.stringify({ ...data, updatedAt }));
+  utimesSync(file, t / 1000, t / 1000);
+}
 
 test('createTenx: enables on .10x, tracks phase, roles, ADRs, reviews and handoff', () => {
   const { root, x } = project();
@@ -264,7 +271,7 @@ test('active.json wins; a new /10x-team prompt shows a meeting until real .10x w
 
   t += 1000;
   tenx.onEvent(pre('Bash', { command: 'echo {...} > .10x/active.json' }), agent(root));
-  writeFileSync(join(x, 'active.json'), JSON.stringify({ role: 'ux-designer', phase: 2, phaseName: 'Experience Design', feature: 'idee', task: 'Flows', updatedAt: new Date(t).toISOString() }));
+  writeActive(x, { role: 'ux-designer', phase: 2, phaseName: 'Experience Design', feature: 'idee', task: 'Flows' }, t);
   tenx.onEvent({ session_id: 's', hook_event_name: 'PostToolUse', tool_name: 'Bash' }, agent(root));
   snap = tenx.snapshot()[root];
   assert.equal(snap.flavor, 'plus');
@@ -298,4 +305,113 @@ test('unknown phase: guess only from the kind of work', () => {
   assert.equal(guessRole(null, 'Read', { file_path: '/r/README.md' }), 'product-manager');
   assert.equal(guessRole(null, 'Edit', { file_path: '/r/src/a.ts' }), 'sde');
   assert.equal(guessRole(null, 'Bash', { command: 'npm test' }), 'qa');
+});
+
+// ADR-015: one owner per project, a fresh or frozen view for the other sessions.
+function shippedProject(t) {
+  const { root, x } = project();
+  writeFileSync(join(x, 'status.md'), '# Status — oud\n' + [0, 1, 2, 3, 4, 5, 6, 7].map((n) => `- [x] Phase ${n}`).join('\n'));
+  writeActive(x, { role: 'devops', phase: 7, phaseName: 'Delivery', feature: 'oud', task: 'Opgeleverd' }, t);
+  return { root, x };
+}
+
+test('a new session starts at phase 0 before its prompt; the finished session stays finished', () => {
+  let t = Date.parse('2026-10-21T10:00:00Z');
+  const { root, x } = shippedProject(t);
+  const tenx = createTenx({ fs: nodeFs, now: () => t });
+  tenx.onEvent({ session_id: 'a', hook_event_name: 'SessionStart', source: 'startup' }, agent(root, 'a'));
+  tenx.onEvent(pre('Write', { file_path: join(x, 'decisions', 'sde', 'oud.md') }, { session_id: 'a' }), agent(root, 'a'));
+  let snap = tenx.snapshot()[root];
+  assert.equal(snap.complete, true);
+  assert.equal(snap.roles.a.role, 'devops');
+
+  t += 60_000;
+  tenx.onEvent({ session_id: 'b', hook_event_name: 'SessionStart', source: 'startup' }, agent(root, 'b'));
+  snap = tenx.snapshot()[root];
+  assert.deepEqual(snap.sessions.b, { phase: 0, done: [], complete: false, active: null, workload: 0, kanban: [], handoffAt: snap.handoffAt });
+  assert.equal(snap.roles.b.role, MEETING);
+  assert.equal(snap.complete, true, 'the owner still shows its shipped feature');
+
+  t += 2000;
+  tenx.onEvent({ session_id: 'b', hook_event_name: 'UserPromptSubmit', prompt: 'Background…\n/10x-Team-Plus:10x-team nieuw' }, agent(root, 'b'));
+  snap = tenx.snapshot()[root];
+  assert.equal(snap.phase, 0);
+  assert.equal(snap.complete, false);
+  assert.equal(snap.sessions.b, undefined, 'b owns the live state now');
+  assert.equal(snap.sessions.a.complete, true, 'a stays shipped');
+  assert.equal(snap.sessions.a.phase, 7);
+  assert.equal(snap.sessions.a.active.feature, 'oud');
+  assert.deepEqual([snap.roles.a.role, snap.roles.b.role], ['devops', MEETING]);
+
+  t += 2000;
+  tenx.onEvent(pre('Read', { file_path: join(x, 'status.md') }, { session_id: 'b' }), agent(root, 'b'));
+  tenx.onEvent({ session_id: 'b', hook_event_name: 'PostToolUse', tool_name: 'Read' }, agent(root, 'b'));
+  snap = tenx.snapshot()[root];
+  assert.deepEqual([snap.phase, snap.complete, snap.roles.b.role], [0, false, MEETING], 'reading status.md does not bring the old feature back');
+
+  t += 2000;
+  writeActive(x, { role: 'meeting', phase: 0, phaseName: 'Brainstorming', feature: 'nieuw', task: 'Vragen' }, t);
+  tenx.onEvent(pre('Write', { file_path: join(x, 'active.json') }, { session_id: 'b' }), agent(root, 'b'));
+  tenx.onEvent({ session_id: 'b', hook_event_name: 'PostToolUse', tool_name: 'Write' }, agent(root, 'b'));
+  snap = tenx.snapshot()[root];
+  assert.deepEqual([snap.phase, snap.active.feature, snap.roles.b.role], [0, 'nieuw', MEETING]);
+  assert.equal(snap.sessions.a.active.feature, 'oud');
+
+  tenx.onEvent({ session_id: 'a', hook_event_name: 'SessionEnd', reason: 'other' }, agent(root, 'a'));
+  assert.ok(tenx.snapshot()[root].sessions.a, 'an app idle stop keeps the frozen view for the resume');
+  tenx.onEvent({ session_id: 'a', hook_event_name: 'SessionEnd', reason: 'clear' }, agent(root, 'a'));
+  assert.equal(tenx.snapshot()[root].sessions.a, undefined);
+});
+
+test('a resumed session keeps the live state', () => {
+  const t = Date.parse('2026-10-21T10:00:00Z');
+  const { root } = shippedProject(t);
+  const tenx = createTenx({ fs: nodeFs, now: () => t });
+  tenx.onEvent({ session_id: 'a', hook_event_name: 'SessionStart', source: 'resume' }, agent(root, 'a'));
+  const snap = tenx.snapshot()[root];
+  assert.deepEqual(snap.sessions, {});
+  assert.equal(snap.complete, true);
+});
+
+test('the active.json role goes to its owner, not to a quiet session that sent the last event', () => {
+  let t = Date.parse('2026-10-21T10:00:00Z');
+  const { root, x } = project();
+  const tenx = createTenx({ fs: nodeFs, now: () => t });
+  tenx.onEvent({ session_id: 'a', hook_event_name: 'UserPromptSubmit', prompt: '/10x-Team-Plus:10x-team x' }, agent(root, 'a'));
+  t += 1000;
+  writeActive(x, { role: 'sde', phase: 5, phaseName: 'Implementation', feature: 'x', task: 'Bouwen' }, t);
+  tenx.onEvent(pre('Write', { file_path: join(x, 'active.json') }, { session_id: 'a' }), agent(root, 'a'));
+  tenx.onEvent({ session_id: 'a', hook_event_name: 'PostToolUse', tool_name: 'Write' }, agent(root, 'a'));
+  t += 1000;
+  tenx.onEvent({ session_id: 'b', hook_event_name: 'Notification', notification_type: 'idle_prompt' }, agent(root, 'b'));
+  const snap = tenx.snapshot()[root];
+  assert.equal(snap.roles.a.role, 'sde');
+  assert.equal(snap.roles.b, undefined);
+});
+
+test('a newer exact signal beats active.json; a guess does not', () => {
+  let t = Date.parse('2026-10-21T10:00:00Z');
+  const { root, x } = project();
+  const tenx = createTenx({ fs: nodeFs, now: () => t });
+  writeActive(x, { role: 'sde', phase: 5, phaseName: 'Implementation', feature: 'x', task: 'Bouwen' }, t);
+  tenx.onEvent(pre('Write', { file_path: join(x, 'active.json') }), agent(root));
+  tenx.onEvent({ session_id: 's', hook_event_name: 'PostToolUse', tool_name: 'Write' }, agent(root));
+  t += 1000;
+  tenx.onEvent(pre('Bash', { command: 'npm audit' }), agent(root));
+  assert.deepEqual(tenx.snapshot()[root].roles.s.role, 'sde', 'a guess never beats active.json');
+  t += 1000;
+  tenx.onEvent(pre('Write', { file_path: join(x, 'decisions', 'qa', 'x.md') }), agent(root));
+  const r = tenx.snapshot()[root].roles.s;
+  assert.deepEqual([r.role, r.guessed], ['qa', false]);
+});
+
+test('the active.json time is its mtime, not the updatedAt Claude typed', () => {
+  const t = Date.parse('2026-10-21T18:00:00Z');
+  const { root, x } = project();
+  writeActive(x, { role: 'qa', phase: 6, phaseName: 'Verification', feature: 'x', task: 'Testen' }, t, '2026-10-21T10:00:00Z');
+  const tenx = createTenx({ fs: nodeFs, now: () => t });
+  tenx.onEvent({ session_id: 's', hook_event_name: 'SessionStart', source: 'resume' }, agent(root));
+  const snap = tenx.snapshot()[root];
+  assert.equal(snap.active?.task, 'Testen', 'an 8 h old updatedAt does not make a fresh file stale');
+  assert.equal(snap.roles.s.role, 'qa');
 });
