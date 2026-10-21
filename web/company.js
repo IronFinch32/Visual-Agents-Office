@@ -188,7 +188,7 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick } = {}) {
       }
       ch.walking = ch.path.length > 0;
       if (ch.walking) ch.phase += dt * 8;
-      if (ch.leaving && !ch.walking && arrived(ch, door())) chars.delete(ch.id);
+      if (ch.leaving && !ch.walking) chars.delete(ch.id);
       if (ch.mode === 'away' && !ch.walking) ch.hidden = true;
     }
     for (let i = particles.length - 1; i >= 0; i--) {
