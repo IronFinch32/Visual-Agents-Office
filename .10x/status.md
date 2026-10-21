@@ -301,11 +301,11 @@
 
 # Status — go-to-market-departments
 
-- [ ] Phase 0: Brainstorming
-- [ ] Phase 1: Strategy
-- [ ] Phase 2: Experience Design
-- [ ] Phase 3: Design
-- [ ] Phase 4: Planning
+- [x] Phase 0: Brainstorming
+- [x] Phase 1: Strategy
+- [x] Phase 2: Experience Design
+- [x] Phase 3: Design
+- [x] Phase 4: Planning
 - [ ] Phase 5: Implementation
 - [ ] Phase 6: Verification
 - [ ] Phase 7: Delivery
@@ -313,3 +313,9 @@
 
 ## Progress
 - Idee van de CEO: de nieuwe afdelingen van 10x-Team-Plus 0.5.0-plus.1 (Marketing & Growth, Sales & Pricing, Customer Success, Legal & Finance) en Phase 8 Launch ook in het kantoor.
+- Gebruiker koos: volwaardig (herkenning + eigen looks), indeling 2 rijen. Spec `specs/2026-10-22-go-to-market-departments-design.md` (3ce6584). ADR-018.
+- [ ] T1 server: rollen, fase 8, klaar-regel + tests
+- [ ] T2 browser-model: rollen, afdelingen, fase 8, fallback + tests
+- [ ] T3 accessoires
+- [ ] T4 legacy kamerweergave afknippen
+- [ ] T5 browsercheck

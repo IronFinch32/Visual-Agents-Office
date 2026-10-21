@@ -16,3 +16,4 @@
 - [session-sync](session-sync.md) — pure tenx.js, CommonJS-hook zonder deps
 - [one-company](one-company.md) — puur model + renderer, hergebruik sprites/nav/pool
 - [bubble-project-label](bubble-project-label.md) — hergebruik fit/rect, optie i.p.v. nieuwe functie
+- [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)

@@ -15,3 +15,4 @@
 - [session-sync](session-sync.md) — T1–T5
 - [one-company](one-company.md) — T1–T6, ~10 u
 - [bubble-project-label](bubble-project-label.md) — 3 taken
+- [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
