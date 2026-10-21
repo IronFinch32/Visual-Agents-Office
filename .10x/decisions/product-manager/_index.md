@@ -11,3 +11,4 @@
 - [team-lounge-darts](team-lounge-darts.md)
 - [no-directie](no-directie.md)
 - [lounge-pool](lounge-pool.md) — pooltafel: speelbaar cosmetisch potje
+- [session-sync](session-sync.md) — verse/bevroren stand per sessie, juiste rol, hook

@@ -224,7 +224,7 @@
 # Status — session-sync
 
 - [x] Phase 0: Brainstorming
-- [ ] Phase 1: Strategy
+- [x] Phase 1: Strategy
 - [ ] Phase 2: Experience Design
 - [ ] Phase 3: Design
 - [ ] Phase 4: Planning
