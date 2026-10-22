@@ -1,7 +1,7 @@
 // One company (ADR-016): every department with its permanent employees, a meeting room, flex desks
 // for plain sessions and a lounge. Each work session is a project folder in its own colour that lies
 // on the desk of the role working on it and is walked to the next desk when the role changes. A second
-// project for a busy role gets a colleague; who has nothing to do takes coffee, darts or pool.
+// project for a busy role gets a colleague; who has nothing to do takes coffee, darts, pool or table tennis.
 import {
   C, looksFor, outfitFor, toolCategory, rect, drawFloor, drawBackWall, drawOuterWalls, drawDoor, drawPlant,
   drawCoffeeMachine, drawSmallTable, drawChair, drawMonitor, drawDesk, drawPerson, drawBadge, drawBubble,
@@ -9,11 +9,13 @@ import {
 } from './sprites.js';
 import {
   roleInfo, roleLooks, drawAccessory, drawFolder, drawZone, drawMeetingTable, drawBeacon, drawStamp, drawSofa,
-  drawDartboard, drawDart, drawPoolTable, drawCue, POOL_W, POOL_H, drawThought, drawSmoke, drawBanner,
+  drawDartboard, drawDart, drawPoolTable, drawCue, POOL_W, POOL_H, drawPingPongTable, drawPaddle,
+  drawPingPongBall, TT_W, TT_H, drawThought, drawSmoke, drawBanner,
 } from './tenx-sprites.js';
 import { createNav } from './nav.js';
 import { fullCam, clampCam, viewFor, focusRect, zoomAt, panCam, stepCam, isZoomed } from './camera.js';
 import { createPoolGame, POCKETS, BALL_R } from './pool.js';
+import { createRally } from './pingpong.js';
 import {
   WALL_H, SLOTS, TABLES, FLEX_PER_SPAN, companyLayout, deriveCases, unknownRoles, createStaffing,
   createProjectColors, shortName, bubbleHeader,
@@ -28,7 +30,7 @@ const HIGHLIGHT_S = 5;
 const MAX_HANDOFFS = 3;
 const COL_W = 38;
 
-const LOUNGE_SPOTS = [[14, 48], [64, 48], [26, 64], [64, 66], [14, 100], [36, 100], [58, 100], [120, 104], [140, 104]];
+const LOUNGE_SPOTS = [[14, 48], [64, 48], [26, 64], [64, 66], [14, 104], [36, 104], [52, 122], [148, 112], [24, 124]];
 const DART_BOARD = [38, 14];
 const DART_SPOTS = [[31, 46], [47, 46]];
 const DART_CHAT = ['180!', 'Bull!', 'Mis…', 'Dubbel 20!', 'Nog een potje?', 'Net ernaast'];
@@ -36,6 +38,9 @@ const POOL_TABLE = [90, 56];
 const POOL_SPOTS = [[82, 78], [148, 78]];
 const POOL_AIM = 1.1;
 const POOL_CHAT = ['In de hoek!', 'Mooie bank!', 'Net niet', 'Zag je dat?', 'Nog een potje?'];
+const TT_TABLE = [78, 98];
+const TT_SPOTS = [[70, 112], [120, 112]];
+const TT_CHAT = ['Punt!', 'Net!', 'Smash!', 'Uit…', 'Nog een potje?'];
 const CHAT = ['☕', 'Mooi werk!', 'Nog koffie?', '…', 'Haha', 'Echt?'];
 const ZONE_RUG = { flex: '#4f5a6e', other: '#5a5a5a' };
 
@@ -73,6 +78,7 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
   let lullNow = false;
   let shipped = new Set();
   let darts = { turn: 0, next: 0, stuck: [], flying: null };
+  let pingpong = { rally: createRally(), players: '', swing: [0, 0], folded: null };
   let pool = { game: createPoolGame(), turn: 0, next: 0, shots: 0, shooter: null, stay: null, aim: 0, angle: 0, stance: null, by: null, held: null };
 
   // ---------- geometry ----------
@@ -113,6 +119,8 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
   const dartSpot = (i) => { const z = lounge(); const [dx, dy] = DART_SPOTS[i]; return { x: z.x + dx, y: z.y + dy }; };
   const poolTable = () => { const z = lounge(); return { x: z.x + POOL_TABLE[0], y: z.y + POOL_TABLE[1] }; };
   const poolSpot = (i) => { const z = lounge(); const [dx, dy] = POOL_SPOTS[i]; return { x: z.x + dx, y: z.y + dy }; };
+  const ttTable = () => { const z = lounge(); return { x: z.x + TT_TABLE[0], y: z.y + TT_TABLE[1] }; };
+  const ttSpot = (i) => { const z = lounge(); const [dx, dy] = TT_SPOTS[i]; return { x: z.x + dx, y: z.y + dy }; };
   function poolStance(angle) {
     const tb = poolTable();
     const c = pool.game.cue();
@@ -143,6 +151,8 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
     nav.block(lz.x + DART_BOARD[0] - 5, lz.y + DART_BOARD[1] + 12, 10, 6);
     const pt = poolTable();
     nav.block(pt.x - 1, pt.y, POOL_W + 2, POOL_H + 6);
+    const tt = ttTable();
+    nav.block(tt.x, tt.y, TT_W, TT_H + 5);
   }
 
   function relayout(departments, extra) {
@@ -346,10 +356,11 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
     };
 
     const members = [...chars.values()].filter((c) => c.member && !c.leaving);
-    const inLounge = (mb) => mb.mode === 'coffee' || mb.mode === 'darts' || mb.mode === 'pool';
+    const inLounge = (mb) => mb.mode === 'coffee' || mb.mode === 'darts' || mb.mode === 'pool' || mb.mode === 'pingpong';
     let loungeCount = members.filter(inLounge).length;
     const dartsTaken = new Set(members.filter((mb) => mb.mode === 'darts' && t < mb.modeUntil).map((mb) => mb.dartSpot));
     const poolTaken = new Set(members.filter((mb) => mb.mode === 'pool' && t < mb.modeUntil).map((mb) => mb.poolSpot));
+    const ttTaken = new Set(members.filter((mb) => mb.mode === 'pingpong' && t < mb.modeUntil).map((mb) => mb.ttSpot));
     for (const ch of members) {
       const c = caseOf(ch);
       const busy = c && (c.status === 'working' || c.status === 'waiting');
@@ -363,9 +374,11 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
       else if (loungeCount < (lull ? 8 : 4) && Math.random() < dt / (lull ? 8 : c ? 40 : 25)) {
         const free = [0, 1].find((i) => !dartsTaken.has(i));
         const freeCue = [0, 1].find((i) => !poolTaken.has(i));
+        const freeBat = [0, 1].find((i) => !ttTaken.has(i));
         const r = Math.random();
-        if (free !== undefined && r < 0.35) { mode = 'darts'; ch.dartSpot = free; dartsTaken.add(free); }
-        else if (freeCue !== undefined && r < 0.7) { mode = 'pool'; ch.poolSpot = freeCue; poolTaken.add(freeCue); }
+        if (free !== undefined && r < 0.25) { mode = 'darts'; ch.dartSpot = free; dartsTaken.add(free); }
+        else if (freeCue !== undefined && r < 0.5) { mode = 'pool'; ch.poolSpot = freeCue; poolTaken.add(freeCue); }
+        else if (freeBat !== undefined && r < 0.75) { mode = 'pingpong'; ch.ttSpot = freeBat; ttTaken.add(freeBat); }
         else mode = 'coffee';
         ch.modeUntil = t + (lull ? 15 + Math.random() * 20 : 12 + Math.random() * 13);
         loungeCount++;
@@ -378,13 +391,16 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
       else if (mode === 'coffee' || mode === 'party') { const i = takeLounge(ch); const s = i !== undefined ? loungeSpot(i) : homeOf(ch); goTo(ch, s.x, s.y); }
       else if (mode === 'darts') { const s = dartSpot(ch.dartSpot); goTo(ch, s.x, s.y); }
       else if (mode === 'pool') { const s = (pool.shooter === ch || pool.stay === ch) && pool.stance ? pool.stance : poolSpot(ch.poolSpot); goTo(ch, s.x, s.y); }
+      else if (mode === 'pingpong') { const s = ttSpot(ch.ttSpot); goTo(ch, s.x, s.y); }
       else if (mode === 'handoff') runHandoff(ch, h, t);
       if (mode !== 'coffee' && mode !== 'party') ch.loungeSpot = undefined;
       if (mode !== 'darts') ch.dartSpot = undefined;
       if (mode !== 'pool') ch.poolSpot = undefined;
+      if (mode !== 'pingpong') ch.ttSpot = undefined;
     }
     playDarts(members.filter((mb) => mb.mode === 'darts' && !mb.walking && !mb.hidden), t);
     playPool(members.filter((mb) => mb.mode === 'pool' && !mb.hidden), t, dt);
+    playPingPong(members.filter((mb) => mb.mode === 'pingpong' && !mb.walking && !mb.hidden), t);
 
     // flex managers sit at their desk; subagents on a stool next to whoever has their case
     const stools = new Map(); // role -> used stool indexes
@@ -516,6 +532,28 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
     Object.assign(pool, { shooter: p, stay: null, aim: 0, stance: poolStance(pool.angle) });
   }
 
+  // table tennis (ADR-021): a new rally whenever the players at the table change
+  function playPingPong(players, t) {
+    const pp = pingpong;
+    const key = players.map((p) => `${p.id}@${p.ttSpot}`).sort().join();
+    if (key !== pp.players) {
+      pp.players = key;
+      pp.folded = players.length === 1 ? 1 - players[0].ttSpot : null; // practising against the other half
+      if (!players.length) pp.rally.stop();
+      else {
+        const side = players.length === 1 ? players[0].ttSpot : Math.round(Math.random());
+        pp.rally.serve(t, side, players.length === 1);
+        pp.swing[side] = t;
+      }
+    }
+    for (const e of pp.rally.update(t)) {
+      if (e.type === 'hit') { pp.swing[e.side] = t; continue; }
+      const by = players.find((p) => p.ttSpot === e.side);
+      if (e.type === 'point' && by && Math.random() < 0.45) by.say = { text: TT_CHAT[Math.floor(Math.random() * TT_CHAT.length)], until: t + 1.8 };
+      if (e.type === 'miss' && by && Math.random() < 0.3) by.say = { text: 'Oeps', until: t + 1.8 };
+    }
+  }
+
   function cueLine(ch, t) {
     const tb = poolTable();
     const c = pool.game.cue();
@@ -617,6 +655,22 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
       if (ch.mode !== 'pool' || ch.walking || ch.hidden || ch === sh || ch === pool.stay) continue;
       overlays.push(() => drawCue(ctx, ch.x + 6, ch.y - 22, ch.x + 6, ch.y - 2));
     }
+    const tt = ttTable();
+    const ttFolded = pingpong.folded;
+    scene.push({ y: tt.y + TT_H + 4, draw: () => drawPingPongTable(ctx, tt.x, tt.y, ttFolded) });
+    for (const ch of chars.values()) {
+      if (ch.mode !== 'pingpong' || ch.walking || ch.hidden || ch.ttSpot === undefined) continue;
+      const dir = ch.ttSpot ? -1 : 1;
+      const reach = t - pingpong.swing[ch.ttSpot] < 0.15 ? 2 : 0;
+      overlays.push(() => drawPaddle(ctx, ch.x + dir * (6 + reach), ch.y - 10));
+    }
+    const ball = pingpong.rally.ball(t);
+    if (ball) {
+      const onTable = ball.u >= 0 && ball.u <= 1;
+      const bx = tt.x + ball.u * TT_W;
+      const top = tt.y + 2 + ball.v * (TT_H - 4);
+      overlays.push(() => drawPingPongBall(ctx, bx, top - ball.h, onTable ? top : top + 6));
+    }
     const db = dartBoard();
     scene.push({ y: db.y + 17, draw: () => drawDartboard(ctx, db.x, db.y, darts.stuck) });
     const fl = darts.flying;
@@ -652,6 +706,7 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
       if (ch.walking) return 'walk';
       if (ch.mode === 'coffee' || ch.mode === 'party') return 'sip';
       if (ch.mode === 'darts') return 'throw';
+      if (ch.mode === 'pingpong') return 'stand';
       if (ch.mode === 'pool') return ch === pool.shooter || ch === pool.stay ? 'cue' : 'stand';
       if (failed && home) return 'stretch';
       if (ch.seatedNow) return a && home ? (a.status === 'idle' ? 'read' : a.status) : 'read';

@@ -340,6 +340,46 @@ export function drawCue(ctx, x1, y1, x2, y2) {
   }
 }
 
+// A table tennis table (ADR-021); (x, y) is the top-left of the top. `folded` (0 left, 1 right) is the half
+// that stands folded up for one player practising, or null.
+export const TT_W = 36;
+export const TT_H = 18;
+export function drawPingPongTable(ctx, x, y, folded = null) {
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(x + TT_W / 2, y + TT_H + 6, TT_W / 2 + 1, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+  rect(ctx, x + 2, y + TT_H + 2, 2, 4, '#3a3a44'); // legs
+  rect(ctx, x + TT_W - 4, y + TT_H + 2, 2, 4, '#3a3a44');
+  rect(ctx, x + 1, y + TT_H, TT_W - 2, 2, '#1d5435'); // edge
+  const half = TT_W / 2;
+  for (const side of [0, 1]) {
+    const hx = x + side * half;
+    if (side === folded) { // seen from the front: a board standing on the net line
+      rect(ctx, hx, y - 10, half, TT_H + 10, '#e8e8e8');
+      rect(ctx, hx + 1, y - 9, half - 2, TT_H + 8, '#25663f');
+      continue;
+    }
+    rect(ctx, hx, y, half, TT_H, '#e8e8e8'); // white border
+    rect(ctx, hx + (side ? 0 : 1), y + 1, half - 1, TT_H - 2, '#2e7d4f');
+    rect(ctx, hx + (side ? 0 : 1), y + TT_H / 2, half - 1, 1, 'rgba(232,232,232,.6)'); // centre line
+  }
+  rect(ctx, x + half - 1, y - 3, 2, TT_H + 3, 'rgba(220,220,230,.75)'); // net
+  rect(ctx, x + half - 1, y - 4, 2, 1, '#3a3a44');
+  rect(ctx, x + half - 1, y + TT_H - 1, 2, 1, '#3a3a44');
+}
+
+// A paddle held at (x, y): red face with a wooden handle.
+export function drawPaddle(ctx, x, y) {
+  const px = Math.round(x), py = Math.round(y);
+  rect(ctx, px - 1, py - 1, 3, 3, '#d64545');
+  rect(ctx, px, py + 2, 1, 2, '#8a5a2b');
+}
+
+// The ball at (x, y), `h` px above its shadow at (x, sy).
+export function drawPingPongBall(ctx, x, y, sy) {
+  rect(ctx, Math.round(x), Math.round(sy), 1, 1, 'rgba(0,0,0,.35)');
+  rect(ctx, Math.round(x), Math.round(y), 1, 1, '#ffffff');
+}
+
 export function drawMiniDesk(ctx, x, y) {
   ctx.fillStyle = 'rgba(0,0,0,.2)';
   ctx.beginPath(); ctx.ellipse(x + 8, y + 9, 9, 2, 0, 0, Math.PI * 2); ctx.fill();
