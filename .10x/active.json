@@ -1,1 +1,1 @@
-{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "ux-polish", "task": "Prompttekst opschonen op de server", "updatedAt": "2026-10-22T07:31:04Z" }
+{ "role": "qa", "phase": 6, "phaseName": "Verification", "feature": "ux-polish", "task": "Zoom, hover, beslissing en legenda testen", "updatedAt": "2026-10-22T07:36:41Z" }

@@ -1,5 +1,4 @@
 # Handoff — ux-polish
 
-**Status:** Phase 4 klaar → SDE. Spec `specs/2026-10-22-ux-polish-design.md`, ADR-019.
-Taken T1–T6 in `decisions/engineering-manager/ux-polish.md`, aanpak in `decisions/senior-engineer/ux-polish.md`.
-Let op: hit-test en tekenen delen één `view`; geen innerHTML voor beslissingstekst; reduced motion.
+**Status:** Phase 5 klaar (3427ef6) → QA, Security, Design review.
+Te testen: zoom (klik afdeling, wiel, knijpen, slepen, knoppen, + − 0, Esc-volgorde), hover-label, klik medewerker → beslissing (CFO-naam, markdown), kaart-klik → oplichten, legenda (Esc/klik ernaast/focus), mobiel, schone taken na herstart van de service.
