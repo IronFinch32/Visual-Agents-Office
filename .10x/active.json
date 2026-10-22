@@ -1,1 +1,1 @@
-{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "shipped-active-feature", "task": "Opgeleverd: kantoor leest de sectie van de actieve feature", "route": "change", "updatedAt": "2026-10-22T07:54:11Z" }
+{ "role": "meeting", "phase": 0, "phaseName": "Brainstorming", "feature": "lounge-table-tennis", "task": "Ontwerp tafeltennis in de lounge bespreken", "route": "build", "updatedAt": "2026-10-22T09:36:20Z" }

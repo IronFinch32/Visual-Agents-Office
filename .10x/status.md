@@ -382,3 +382,18 @@ change — sde, qa, security
 
 ## Delivery
 - Live op :4747 (service herstart 2026-10-22). Niets gepusht.
+
+# Status — lounge-table-tennis
+
+- [ ] Phase 0: Brainstorming
+- [ ] Phase 1: Strategy
+- [ ] Phase 2: Experience Design
+- [ ] Phase 3: Design
+- [ ] Phase 4: Planning
+- [ ] Phase 5: Implementation
+- [ ] Phase 6: Verification
+- [ ] Phase 7: Delivery
+- [ ] Phase 8: Launch
+
+## Route
+build — sde, ui-designer, qa
