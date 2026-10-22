@@ -385,11 +385,11 @@ change — sde, qa, security
 
 # Status — lounge-table-tennis
 
-- [ ] Phase 0: Brainstorming
-- [ ] Phase 1: Strategy
-- [ ] Phase 2: Experience Design
-- [ ] Phase 3: Design
-- [ ] Phase 4: Planning
+- [x] Phase 0: Brainstorming
+- [x] Phase 1: Strategy — skipped (geen commerciële impact, zie PM)
+- [x] Phase 2: Experience Design
+- [x] Phase 3: Design — ADR-021
+- [x] Phase 4: Planning
 - [ ] Phase 5: Implementation
 - [ ] Phase 6: Verification
 - [ ] Phase 7: Delivery
@@ -397,3 +397,11 @@ change — sde, qa, security
 
 ## Route
 build — sde, ui-designer, qa
+
+## Progress
+- Gebruiker koos: rally met missers. Spec `specs/2026-10-22-lounge-table-tennis-design.md` goedgekeurd. ADR-021.
+- Strategy: geen commerciële impact (zie PM). Launch overgeslagen.
+- [ ] T1 pingpong.js + tests
+- [ ] T2 sprites
+- [ ] T3 company.js
+- [ ] T4 browsercheck

@@ -1,6 +1,4 @@
-# Handoff — shipped-active-feature
+# Handoff — lounge-table-tennis → SDE
 
-**Status:** opgeleverd (Phase 7; Phase 8 skipped — route change). Code e7726aa; ADR-020.
-- Het kantoor leest nu de `# Status — <feature>`-sectie die `active.json` noemt, waar die ook in `status.md` staat; Aruba toont daardoor niet meer SHIPPED tijdens Verification/Delivery.
-- Rollback: `git revert e7726aa` + `launchctl kickstart -k gui/$UID/com.visualagentsoffice`. Niets gepusht.
-- Opmerking voor Aruba (niet aangepast): daar staat de lopende sectie middenin `status.md`, tegen het plugin-contract in; het kantoor kan er nu tegen.
+Bouw volgens ADR-021 en `decisions/senior-engineer/lounge-table-tennis.md`:
+T1 `web/pingpong.js` + `test/pingpong.test.js`, T2 sprites in `web/tenx-sprites.js`, T3 lijm in `web/company.js` (modus `pingpong`, plekken rechtsonder, loungeplekken verschuiven), T4 browsercheck op :4848.

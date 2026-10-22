@@ -17,3 +17,4 @@
 - [bubble-project-label](bubble-project-label.md) — 3 taken
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
 - [ux-polish](ux-polish.md) — 6 taken, ~1 dag
+- [lounge-table-tennis](lounge-table-tennis.md) — 4 taken, ~2-3 uur

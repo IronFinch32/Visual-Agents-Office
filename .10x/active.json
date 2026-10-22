@@ -1,1 +1,1 @@
-{ "role": "meeting", "phase": 0, "phaseName": "Brainstorming", "feature": "lounge-table-tennis", "task": "Ontwerp tafeltennis in de lounge bespreken", "route": "build", "updatedAt": "2026-10-22T09:36:20Z" }
+{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "lounge-table-tennis", "task": "pingpong.js en tafeltennis in de lounge bouwen", "route": "build", "updatedAt": "2026-10-22T09:40:11Z" }

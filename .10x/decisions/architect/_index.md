@@ -25,3 +25,4 @@
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
 - [ux-polish](ux-polish.md) — camera-module, zoom-API, hover-callback (ADR-019)
 - [shipped-active-feature](shipped-active-feature.md) — ADR-020
+- [lounge-table-tennis](lounge-table-tennis.md) — pingpong.js puur + lijm in company.js (ADR-021)
