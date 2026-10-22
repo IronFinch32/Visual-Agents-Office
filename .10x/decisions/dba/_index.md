@@ -17,3 +17,4 @@ No database in this project (in-memory state by design, ADR-001).
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
 - [ux-polish](ux-polish.md) — geen datawijziging
 - [lounge-table-tennis](lounge-table-tennis.md) — n.v.t.
+- [table-tennis-pairs-only](table-tennis-pairs-only.md) — n.v.t.

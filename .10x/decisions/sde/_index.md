@@ -23,3 +23,4 @@
 - [ux-polish](ux-polish.md) — camera-zoom, hover, schone lijst, legenda (3427ef6)
 - [shipped-active-feature](shipped-active-feature.md)
 - [lounge-table-tennis](lounge-table-tennis.md) — pingpong.js + lounge-tafel (cfdc8ff)
+- [table-tennis-pairs-only](table-tennis-pairs-only.md) — duo-keuze, solo weg (54c133a)

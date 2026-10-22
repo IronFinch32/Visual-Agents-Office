@@ -24,3 +24,4 @@
 - [ux-polish](ux-polish.md) — Approved — geen innerHTML, begrensde regex
 - [shipped-active-feature](shipped-active-feature.md)
 - [lounge-table-tennis](lounge-table-tennis.md) — Approved — alleen canvas, geen invoer
+- [table-tennis-pairs-only](table-tennis-pairs-only.md) — Approved

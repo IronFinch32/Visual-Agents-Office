@@ -19,3 +19,4 @@
 - [ux-polish](ux-polish.md) — geen nieuwe monitoring nodig
 - [shipped-active-feature](shipped-active-feature.md)
 - [lounge-table-tennis](lounge-table-tennis.md) — geen nieuwe monitoring nodig
+- [table-tennis-pairs-only](table-tennis-pairs-only.md) — geen monitoring nodig

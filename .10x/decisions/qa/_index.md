@@ -26,3 +26,4 @@
 - [ux-polish](ux-polish.md) — Pass — reviews/2026-10-22-ux-polish-qa-report.md
 - [shipped-active-feature](shipped-active-feature.md)
 - [lounge-table-tennis](lounge-table-tennis.md) — Pass — reviews/2026-10-22-lounge-table-tennis-qa-report.md
+- [table-tennis-pairs-only](table-tennis-pairs-only.md) — Pass — reviews/2026-10-22-table-tennis-pairs-only-qa-report.md

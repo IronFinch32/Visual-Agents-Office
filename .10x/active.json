@@ -1,1 +1,1 @@
-{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "table-tennis-pairs-only", "task": "Tafeltennis alleen als duo bouwen", "route": "change", "updatedAt": "2026-10-22T09:52:21Z" }
+{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "table-tennis-pairs-only", "task": "Opgeleverd: tafeltennis alleen als duo", "route": "change", "updatedAt": "2026-10-22T10:05:15Z" }

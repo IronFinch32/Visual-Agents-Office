@@ -20,3 +20,4 @@
 - [ux-polish](ux-polish.md) — Ready to release — service herstart, rollback via revert
 - [shipped-active-feature](shipped-active-feature.md)
 - [lounge-table-tennis](lounge-table-tennis.md) — Ready to release — statische web-bestanden, geen herstart
+- [table-tennis-pairs-only](table-tennis-pairs-only.md) — Ready to release — statisch, geen herstart

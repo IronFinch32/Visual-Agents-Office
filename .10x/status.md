@@ -420,13 +420,20 @@ build — sde, ui-designer, qa
 - [x] Phase 2: Experience Design — skipped (gedrag vastgelegd in spec, geen nieuw scherm)
 - [x] Phase 3: Design — ADR-022
 - [x] Phase 4: Planning — skipped (route: change)
-- [ ] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
-- [ ] Phase 8: Launch
+- [x] Phase 5: Implementation
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
+- [x] Phase 8: Launch — skipped (route: change)
 
 ## Route
 change — sde, qa
 
 ## Progress
 - Melding: één speler speelt alleen, lijkt tegen een muur. Gebruiker koos: alleen als duo. Spec `specs/2026-10-22-table-tennis-pairs-only-design.md`, ADR-022.
+- Code: 54c133a · tests 126/126
+
+## Verification
+- QA Pass, Security Approved — `reviews/2026-10-22-table-tennis-pairs-only-*.md`.
+
+## Delivery
+- Live op :4747 (statische bestanden). Gepusht naar origin/main.
