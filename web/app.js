@@ -1,8 +1,9 @@
 import { createBuilding } from './building.js';
 import { minutesSince } from './sprites.js';
+import { parseMarkdown } from './markdown.js';
 
 const $ = (id) => document.getElementById(id);
-const building = createBuilding($('building'), { banner: $('banner'), backButton: $('back'), onRoleClick: showDecision });
+const building = createBuilding($('building'), { banner: $('banner'), backButton: $('back'), onRoleClick: showDecision, onHover: showHover });
 const STATUS_LABEL = { working: 'werkt', waiting: 'wacht op jou', done: 'klaar', idle: 'idle' };
 const ORDER = { waiting: 0, working: 1, done: 2, idle: 3 };
 
@@ -13,7 +14,61 @@ const ROLE_LABEL = {
   cto: 'CTO', 'product-manager': 'Product Manager', 'ux-designer': 'UX Designer', 'ui-designer': 'UI Designer', architect: 'Architect', 'staff-engineer': 'Staff Engineer',
   'engineering-manager': 'Engineering Manager', 'senior-engineer': 'Senior Engineer', sde: 'SDE', dba: 'DBA',
   qa: 'QA Engineer', security: 'Security Engineer', devops: 'DevOps Engineer', sre: 'SRE',
+  'product-marketing-manager': 'Product Marketing Manager', 'sales-lead': 'Sales Lead',
+  'customer-success-manager': 'Customer Success Manager', 'legal-counsel': 'Legal Counsel', cfo: 'CFO',
 };
+let roleTitles = new Map(); // role -> title from the plugin's departments.json
+const roleName = (role) => roleTitles.get(role) || ROLE_LABEL[role] || role;
+
+/** Hover label next to the cursor for a person or department in the company (ADR-019). */
+function showHover(info, x, y) {
+  const box = $('hover');
+  if (!info) { box.hidden = true; return; }
+  const rows = [el('div', 'hover-title', info.title)];
+  if (info.kind === 'zone') rows.push(el('div', 'hover-muted', info.hint));
+  else {
+    if (info.project) {
+      const line = el('div', 'hover-project');
+      const sw = el('span', 'swatch');
+      if (info.color) sw.style.background = info.color;
+      line.append(sw, document.createTextNode(info.project));
+      rows.push(line);
+    }
+    const status = [info.status, info.task].filter(Boolean).join(' · ');
+    if (status) rows.push(el('div', 'hover-muted', status));
+    if (info.clickable) rows.push(el('div', 'hover-hint', 'Klik: laatste beslissing'));
+  }
+  box.replaceChildren(...rows);
+  box.hidden = false;
+  const pad = 14;
+  const w = box.offsetWidth, h = box.offsetHeight;
+  box.style.left = `${Math.max(8, Math.min(innerWidth - w - 8, x + pad))}px`;
+  box.style.top = `${Math.max(8, y + pad + h > innerHeight - 8 ? y - h - pad : y + pad)}px`;
+}
+
+/** Decision markdown as DOM: never innerHTML, the file is just text. */
+function decisionBody(text) {
+  const body = el('div', 'decision-body');
+  const inline = (node, spans) => {
+    for (const sp of spans) node.append(sp.bold ? el('strong', null, sp.t) : sp.code ? el('code', null, sp.t) : document.createTextNode(sp.t));
+    return node;
+  };
+  for (const b of parseMarkdown(text)) {
+    if (b.type === 'h') body.append(inline(el('div', `md-h md-h${Math.min(b.level, 3)}`), b.spans));
+    else if (b.type === 'li') { const li = inline(el('div', 'md-li'), b.spans); li.style.marginLeft = `${b.depth * 12}px`; body.append(li); }
+    else if (b.type === 'code') body.append(el('pre', 'md-code', b.text));
+    else body.append(inline(el('p', 'md-p'), b.spans));
+  }
+  return body;
+}
+
+/** Make a list item act like a button (click and Enter/Space). */
+function clickable(node, fn) {
+  node.tabIndex = 0;
+  node.classList.add('clickable');
+  node.addEventListener('click', fn);
+  node.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } });
+}
 
 async function showDecision(project, role) {
   try {
@@ -81,6 +136,7 @@ function card(a, now) {
   if (a.task) li.append(el('div', 'task', a.task));
   if (a.activity && a.status !== 'waiting') li.append(el('div', 'activity', a.activity));
   if (a.kind === 'session' && a.cwd) li.title = a.cwd;
+  clickable(li, () => building.focus(a.room || a.projectKey));
   return li;
 }
 
@@ -91,14 +147,15 @@ function renderPanel() {
   if (decision) {
     const li = el('li', 'card decision');
     const row = el('div', 'row');
-    row.append(el('span', 'name', `Beslissing · ${ROLE_LABEL[decision.role] || decision.role}`));
+    row.append(el('span', 'name', `Beslissing · ${roleName(decision.role)}`));
     const close = el('button', 'close', '✕');
     close.type = 'button';
     close.title = 'Sluiten';
+    close.setAttribute('aria-label', 'Beslissing sluiten');
     close.addEventListener('click', () => { decision = null; renderPanel(); });
     row.append(close);
     li.append(row, el('div', 'task', decision.file ? `.10x/decisions/${decision.role}/${decision.file}` : 'Nog geen beslissing van deze rol.'));
-    if (decision.text) li.append(el('pre', 'decision-text', decision.text));
+    if (decision.text) li.append(decisionBody(decision.text));
     list.append(li);
   }
   for (const [key, tx] of Object.entries(tenx)) {
@@ -117,8 +174,8 @@ function renderPanel() {
   for (const p of [...projects.values()].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))) {
     const head = el('li', 'project');
     head.append(el('span', null, p.name), el('span', null, `${p.agents.length} agent${p.agents.length === 1 ? '' : 's'}`));
-    head.title = p.title || p.key;
-    head.addEventListener('click', () => building.focus(p.key));
+    head.title = `${p.title || p.key} — klik om op te lichten`;
+    clickable(head, () => building.focus(p.key));
     list.append(head);
     const sessions = p.agents.filter((a) => a.kind === 'session')
       .sort((a, b) => (ORDER[a.status] - ORDER[b.status]) || (a.startedAt - b.startedAt));
@@ -136,7 +193,7 @@ function renderPanel() {
   c.replaceChildren();
   for (const k of ['waiting', 'working', 'done', 'idle']) {
     if (!counts[k] && k !== 'waiting') continue;
-    const span = el('span', 'count');
+    const span = el('span', counts[k] ? 'count' : 'count zero');
     span.append(el('span', `dot ${k}`), document.createTextNode(`${counts[k]} ${STATUS_LABEL[k]}`));
     c.append(span);
   }
@@ -153,6 +210,7 @@ function onSnapshot(data) {
   wasWaiting.clear();
   for (const id of waitingNow) wasWaiting.add(id);
   tenx = data.tenx || {};
+  roleTitles = new Map((data.departments?.departments || []).flatMap((d) => d.roles.map((r) => [r.role, r.title])).filter(([r, t]) => t && t !== r));
   building.setAgents(agents, data.now, tenx, data.departments || null);
   renderPanel();
   if (newlyWaiting) chime();
@@ -168,6 +226,21 @@ function connect() {
 }
 
 $('sound').addEventListener('click', () => setSound(!soundOn));
+
+// Legend (ux-polish): what the colours mean and how to zoom and click.
+function setHelp(open) {
+  $('help').hidden = !open;
+  $('helpToggle').setAttribute('aria-expanded', String(open));
+  (open ? $('helpClose') : $('helpToggle')).focus();
+}
+$('helpToggle').addEventListener('click', (e) => { e.stopPropagation(); setHelp($('help').hidden); });
+$('helpClose').addEventListener('click', () => setHelp(false));
+document.addEventListener('click', (e) => { if (!$('help').hidden && !$('help').contains(e.target)) setHelp(false); });
+// capture: closing the legend wins over the building's Escape (zoom out, unfocus)
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('help').hidden) { e.preventDefault(); e.stopImmediatePropagation(); setHelp(false); }
+  else if (e.key === '?' && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) setHelp($('help').hidden);
+}, true);
 $('panelToggle').addEventListener('click', () => {
   const hidden = $('panel').classList.toggle('hidden');
   writePref('vao-panel', hidden ? '0' : '1');

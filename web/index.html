@@ -15,9 +15,34 @@
     <div class="actions">
       <button id="back" type="button" hidden>← Gebouw</button>
       <button id="sound" type="button" aria-pressed="false" title="Belletje als een agent op je wacht">🔕 Geluid uit</button>
-      <button id="panelToggle" type="button" title="Lijst tonen/verbergen">☰</button>
+      <button id="helpToggle" type="button" title="Uitleg en sneltoetsen (?)" aria-label="Uitleg en sneltoetsen" aria-expanded="false" aria-controls="help">?</button>
+      <button id="panelToggle" type="button" title="Lijst tonen/verbergen" aria-label="Lijst tonen of verbergen">☰</button>
     </div>
   </header>
+  <div id="help" class="help" role="dialog" aria-labelledby="helpTitle" hidden>
+    <div class="help-head"><h2 id="helpTitle">Zo werkt het kantoor</h2><button id="helpClose" type="button" aria-label="Uitleg sluiten">✕</button></div>
+    <h3>Status</h3>
+    <ul class="help-list">
+      <li><span class="dot waiting"></span> Wacht op jou: een vraag of goedkeuring</li>
+      <li><span class="dot working"></span> Werkt</li>
+      <li><span class="dot done"></span> Klaar</li>
+      <li><span class="dot idle"></span> Idle of vrij</li>
+      <li><span class="swatch" style="background:#4ea3ff"></span> Projectkleur: map, bureaurand en ballonkop van één project</li>
+    </ul>
+    <h3>Bediening</h3>
+    <ul class="help-list">
+      <li>Klik op een <b>afdeling</b> om in te zoomen, nog eens voor het hele bedrijf</li>
+      <li>Scroll of knijp om te zoomen, sleep om te schuiven</li>
+      <li>Klik op een <b>medewerker</b> voor diens laatste beslissing</li>
+      <li>Klik op een kaart in de lijst om dat project op te lichten</li>
+    </ul>
+    <h3>Sneltoetsen</h3>
+    <ul class="help-list keys">
+      <li><kbd>+</kbd> <kbd>−</kbd> zoomen · <kbd>0</kbd> heel bedrijf</li>
+      <li><kbd>Esc</kbd> terug · <kbd>?</kbd> deze uitleg</li>
+    </ul>
+  </div>
+  <div id="hover" class="hover" role="tooltip" hidden></div>
   <div id="offline" class="offline" hidden>Geen verbinding met de server — opnieuw verbinden…</div>
   <main class="layout">
     <section class="stage">

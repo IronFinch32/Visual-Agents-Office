@@ -26,6 +26,15 @@ export function truncate(value, max) {
   return s.length > max ? s.slice(0, max - 1) + '…' : s;
 }
 
+/** Prompt text without injected markup such as <system-reminder>…</system-reminder> or <command-name> tags. */
+export function cleanPrompt(value) {
+  let s = value == null ? '' : String(value).slice(0, 20_000); // bounds the regex work; the task keeps 140 chars
+  for (let prev = ''; prev !== s;) { prev = s; s = s.replace(/<([a-zA-Z][\w-]*)[^>]*>[\s\S]*?<\/\1>/g, ' '); }
+  // an injected block cut off by truncation (<system-reminder> without its end tag) runs to the end
+  s = s.replace(/<([a-zA-Z]+-[\w-]*)[^>]*>[\s\S]*$/, ' ');
+  return s.replace(/<\/?[a-zA-Z][\w-]*[^>]*>/g, ' ');
+}
+
 function basename(p) {
   if (!p) return '';
   const parts = String(p).split(/[\\/]/).filter(Boolean);
@@ -201,7 +210,7 @@ export function applyEvent(state, evt, now = Date.now()) {
         }
       }
       setStatus(target, 'working', now);
-      target.task = truncate(evt.prompt, LIMITS.task);
+      target.task = truncate(cleanPrompt(evt.prompt), LIMITS.task);
       target.activity = 'Denkt na';
       target.tool = '';
       break;
@@ -318,7 +327,7 @@ export function restoreCeo(state, saved, now = Date.now()) {
     state.agents.set(s.id, {
       id: s.id, sessionId: s.id, parentId: null, kind: 'session', ceo: true,
       name: str(s.name, LIMITS.name) || 'sessie', cwd: path(s.cwd), projectKey: path(s.projectKey) || 'unknown', project: str(s.project, LIMITS.name),
-      task: str(s.task, LIMITS.task), activity: '', waitingReason: '',
+      task: truncate(cleanPrompt(typeof s.task === 'string' ? s.task : ''), LIMITS.task), activity: '', waitingReason: '',
       status: ['waiting', 'done', 'idle'].includes(s.status) ? s.status : 'idle',
       startedAt: num(s.startedAt), updatedAt: s.updatedAt, statusSince: num(s.statusSince),
       source: s.source === 'codex' ? 'codex' : 'claude',

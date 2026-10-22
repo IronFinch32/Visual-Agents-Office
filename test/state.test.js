@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createState, applyEvent, prune, snapshot, describeTool, truncate, STALE_MS, SUBAGENT_DONE_TTL_MS, projectKeyFor } from '../server/state.js';
+import { createState, applyEvent, prune, snapshot, describeTool, truncate, cleanPrompt, STALE_MS, SUBAGENT_DONE_TTL_MS, projectKeyFor } from '../server/state.js';
 
 const S = { session_id: 's1', cwd: '/Users/x/code/my-app' };
 const ev = (name, extra = {}) => ({ ...S, hook_event_name: name, ...extra });
@@ -203,4 +203,19 @@ test('PostToolUseFailure records failedAt', () => {
   applyEvent(st, ev('PostToolUseFailure', { tool_name: 'Bash' }), 42);
   assert.equal(get(st).failedAt, 42);
   assert.equal(get(st).status, 'working');
+});
+
+test('cleanPrompt drops injected markup and keeps the words (ux-polish)', () => {
+  assert.equal(truncate(cleanPrompt('<system-reminder>hidden\nstuff</system-reminder> Bouw een webshop'), 140), 'Bouw een webshop');
+  assert.equal(truncate(cleanPrompt('<command-name>/10x-team</command-name><command-args>login</command-args> verder'), 140), 'verder');
+  assert.equal(truncate(cleanPrompt('Fix dit <system-reminder> The session "Aruba" you started (local_31f…'), 140), 'Fix dit');
+  assert.equal(truncate(cleanPrompt('a < b en c > d'), 140), 'a < b en c > d');
+  assert.equal(cleanPrompt(null), '');
+});
+
+test('a prompt with a system reminder becomes a clean task', () => {
+  const st = createState();
+  applyEvent(st, { ...S, hook_event_name: 'SessionStart' }, 1000);
+  applyEvent(st, { ...S, hook_event_name: 'UserPromptSubmit', prompt: '<system-reminder>x</system-reminder>\nMaak de lijst mooier' }, 2000);
+  assert.equal(snapshot(st)[0].task, 'Maak de lijst mooier');
 });

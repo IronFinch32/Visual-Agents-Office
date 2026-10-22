@@ -12,6 +12,7 @@ import {
   drawDartboard, drawDart, drawPoolTable, drawCue, POOL_W, POOL_H, drawThought, drawSmoke, drawBanner,
 } from './tenx-sprites.js';
 import { createNav } from './nav.js';
+import { fullCam, clampCam, viewFor, focusRect, zoomAt, panCam, stepCam, isZoomed } from './camera.js';
 import { createPoolGame, POCKETS, BALL_R } from './pool.js';
 import {
   WALL_H, SLOTS, TABLES, FLEX_PER_SPAN, companyLayout, deriveCases, unknownRoles, createStaffing,
@@ -38,7 +39,11 @@ const POOL_CHAT = ['In de hoek!', 'Mooie bank!', 'Net niet', 'Zag je dat?', 'Nog
 const CHAT = ['☕', 'Mooi werk!', 'Nog koffie?', '…', 'Haha', 'Echt?'];
 const ZONE_RUG = { flex: '#4f5a6e', other: '#5a5a5a' };
 
-export function createCompany(canvas, { phase: getPhase, onRoleClick } = {}) {
+const DRAG_PX = 4;
+const reducedMotion = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const STATUS_TEXT = { working: 'werkt', waiting: 'wacht op jou', done: 'klaar', idle: 'idle' };
+
+export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, onZoomChange, onWantFocus } = {}) {
   const ctx = canvas.getContext('2d');
   const shade = document.createElement('canvas');
   const dim = document.createElement('canvas');
@@ -56,6 +61,11 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick } = {}) {
   let handoffs = []; // { key, giver, receiver, stage, until, label, color }
   let clockSkew = 0;
   let view = { scale: 1, ox: 0, oy: 0 };
+  // camera (ADR-019): `cam` is drawn, `camTarget` is where it eases to
+  let cam = fullCam(L.W, L.H);
+  let camTarget = cam;
+  let camZone = null; // department the camera was sent to by a click
+  let zoomedBefore = false;
   let party = null; // { until, label }
   let highlight = null; // { key, until }
   let chatAt = 0;
@@ -141,6 +151,8 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick } = {}) {
     layoutKey = key;
     L = companyLayout(departments, extra);
     buildNav();
+    cam = clampCam(cam, L.W, L.H);
+    camTarget = clampCam(camTarget, L.W, L.H);
     // employees whose role is gone leave; everybody else is put back at their desk
     for (const [id, ch] of [...chars]) {
       if (!ch.member) continue;
@@ -559,8 +571,9 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick } = {}) {
     const quiet = quietNow;
     const lightPhase = quiet ? 'nacht' : getPhase ? getPhase() : 'dag';
     const partyOn = party && party.until > t;
-    const scale = Math.min(cw / L.W, chh / L.H);
-    view = { scale, ox: Math.round((cw - L.W * scale) / 2), oy: Math.round((chh - L.H * scale) / 2) };
+    cam = reducedMotion.matches ? camTarget : stepCam(cam, camTarget, dt);
+    view = viewFor(cam, L.W, L.H, cw, chh);
+    const { scale } = view;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#11131d';
     ctx.fillRect(0, 0, cw, chh);
@@ -803,25 +816,134 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick } = {}) {
     if (partyOn) drawBanner(ctx, L.W / 2, WALL_H + 6, party.label, t);
   }
 
-  // Click on an employee → their latest decision for the project they work on.
-  canvas.addEventListener('click', (e) => {
+  // ---------- pointer: hover, click, drag, wheel, pinch (ADR-019) ----------
+  const toLogical = (clientX, clientY) => {
     const r = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    const lx = ((e.clientX - r.left) * dpr - view.ox) / view.scale;
-    const ly = ((e.clientY - r.top) * dpr - view.oy) / view.scale;
+    return { x: ((clientX - r.left) * dpr - view.ox) / view.scale, y: ((clientY - r.top) * dpr - view.oy) / view.scale };
+  };
+  const cssToLogical = (px) => (px * (window.devicePixelRatio || 1)) / view.scale;
+
+  /** The person nearest to (x, y) within a generous box around their body. */
+  function hitPerson(x, y) {
+    let best = null, bestD = Infinity;
     for (const ch of chars.values()) {
-      if (!ch.member || ch.hidden) continue;
+      if (ch.hidden || (!ch.member && !ch.flex && !ch.agent)) continue;
       const top = ch.y - (ch.seatedNow ? 19 : 22);
-      if (Math.abs(lx - ch.x) <= 9 && ly >= top - 2 && ly <= ch.y + 4) {
-        const c = caseOf(ch);
-        if (c) ch.lastProject = c.projectKey;
-        const project = c?.projectKey || ch.lastProject || cases.find((x) => x.kind === 'tenx')?.projectKey;
-        if (!project) return;
-        e.stopPropagation();
-        onRoleClick?.(project, ch.member);
+      if (Math.abs(x - ch.x) > 8 || y < top - 6 || y > ch.y + 6) continue;
+      const d = Math.hypot(x - ch.x, y - (top + ch.y) / 2);
+      if (d < bestD) { best = ch; bestD = d; }
+    }
+    return best;
+  }
+  const hitZone = (x, y) => L.zones.find((z) => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h) || null;
+
+  /** What the hover label says about a person. */
+  function personInfo(ch) {
+    const c = ch.member ? caseOf(ch) : ch.case;
+    const a = ch.agent || c?.agent;
+    const title = ch.member ? `${titles.get(ch.member) || roleLabel(ch.member, 0)}${ch.slot ? ` ${ch.slot + 1}` : ''}` : ch.flex ? `Sessie · ${c?.agent?.source || 'claude'}` : `Subagent · ${a?.name || ''}`;
+    const project = c ? [c.project, c.feature].filter(Boolean).join(' · ') : '';
+    const status = a?.status ? STATUS_TEXT[a.status] || a.status : ch.member ? 'vrij' : '';
+    return { kind: 'person', title, project, color: c?.color || null, status, task: a?.task || '', clickable: !!ch.member };
+  }
+
+  function setTarget(next, zoneId = null) {
+    camTarget = clampCam(next, L.W, L.H);
+    camZone = zoneId;
+    const z = isZoomed(camTarget);
+    if (z && !zoomedBefore) onWantFocus?.();
+    if (z !== zoomedBefore) { zoomedBefore = z; onZoomChange?.(z); }
+  }
+  function zoomTo(zoneId) {
+    const z = zoneId && zone(zoneId);
+    setTarget(z ? focusRect(z, L.W, L.H) : fullCam(L.W, L.H), z ? zoneId : null);
+  }
+  function zoomBy(factor) {
+    setTarget(zoomAt(camTarget, factor, camTarget.cx, camTarget.cy, L.W, L.H));
+  }
+
+  const pointers = new Map(); // pointerId -> { x, y } in client px
+  let drag = null; // { x, y, moved, pinch }
+  let suppressClick = false;
+  canvas.style.touchAction = 'none';
+
+  canvas.addEventListener('pointerdown', (e) => {
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1) drag = { x: e.clientX, y: e.clientY, moved: false, pinch: null };
+    if (pointers.size === 2) {
+      const [p, q] = [...pointers.values()];
+      drag = { ...drag, moved: true, pinch: Math.hypot(p.x - q.x, p.y - q.y) };
+    }
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    const prev = pointers.get(e.pointerId);
+    if (prev && drag) {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 2 && drag.pinch) {
+        const [p, q] = [...pointers.values()];
+        const dist = Math.hypot(p.x - q.x, p.y - q.y);
+        const mid = toLogical((p.x + q.x) / 2, (p.y + q.y) / 2);
+        setTarget(zoomAt(camTarget, dist / drag.pinch, mid.x, mid.y, L.W, L.H));
+        cam = camTarget;
+        drag.pinch = dist;
+        return;
+      }
+      if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > DRAG_PX) {
+        drag.moved = true;
+        canvas.setPointerCapture?.(e.pointerId);
+      }
+      if (drag.moved && isZoomed(camTarget)) {
+        setTarget(panCam(camTarget, cssToLogical(e.clientX - prev.x), cssToLogical(e.clientY - prev.y), L.W, L.H), camZone);
+        cam = camTarget;
+        canvas.style.cursor = 'grabbing';
+        onHover?.(null);
         return;
       }
     }
+    const { x, y } = toLogical(e.clientX, e.clientY);
+    const ch = hitPerson(x, y);
+    if (ch) {
+      canvas.style.cursor = ch.member ? 'pointer' : 'default';
+      onHover?.(personInfo(ch), e.clientX, e.clientY);
+      return;
+    }
+    const z = hitZone(x, y);
+    canvas.style.cursor = z ? (camZone === z.id ? 'zoom-out' : 'zoom-in') : 'default';
+    onHover?.(z ? { kind: 'zone', title: z.label, hint: camZone === z.id ? 'Klik: heel bedrijf' : 'Klik om in te zoomen' } : null, e.clientX, e.clientY);
+  });
+  const release = (e) => {
+    pointers.delete(e.pointerId);
+    if (!pointers.size && drag) { suppressClick = drag.moved; drag = null; canvas.style.cursor = ''; }
+  };
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+  canvas.addEventListener('pointerleave', () => { if (!drag) onHover?.(null); });
+
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const { x, y } = toLogical(e.clientX, e.clientY);
+    const factor = Math.exp(-Math.max(-100, Math.min(100, e.deltaY)) * (e.ctrlKey ? 0.01 : 0.0025));
+    setTarget(zoomAt(camTarget, factor, x, y, L.W, L.H));
+  }, { passive: false });
+
+  // Click on an employee → their latest decision; on a department → zoom in (again: whole company).
+  canvas.addEventListener('click', (e) => {
+    e.stopPropagation(); // the company decides itself; a missed click must not toggle the building focus
+    if (suppressClick) { suppressClick = false; return; }
+    const { x: lx, y: ly } = toLogical(e.clientX, e.clientY);
+    const ch = hitPerson(lx, ly);
+    if (ch?.member) {
+      const c = caseOf(ch);
+      if (c) ch.lastProject = c.projectKey;
+      const project = c?.projectKey || ch.lastProject || cases.find((x) => x.kind === 'tenx')?.projectKey;
+      if (project) onRoleClick?.(project, ch.member);
+      return;
+    }
+    if (ch) return;
+    const z = hitZone(lx, ly);
+    if (!z) return;
+    zoomTo(camZone === z.id ? null : z.id);
   });
 
   return {
@@ -831,6 +953,10 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick } = {}) {
     colorOf: (projectKey) => colorOf(projectKey),
     highlight: (key) => { highlight = key ? { key, until: performance.now() / 1000 + HIGHLIGHT_S } : null; },
     frame,
+    zoomTo,
+    zoomBy,
+    resetZoom: () => zoomTo(null),
+    isZoomed: () => isZoomed(camTarget),
     size: () => ({ W: L.W, H: L.H }),
     isEmpty: () => false,
     debug: () => ({

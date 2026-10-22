@@ -9,6 +9,11 @@
   --done: #3ddc84;
   --idle: #8a8fa8;
   --font: 'Pixelify Sans', ui-monospace, Menlo, monospace;
+  /* ux-polish: readable text for everything longer than a label */
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --hover: #3a3f5e;
+  --focus: #ffd166;
+  --line: #11131d;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
@@ -46,7 +51,14 @@ button {
   padding: 4px 10px;
   cursor: pointer;
 }
-button[aria-pressed="true"] { border-color: var(--done); }
+button:hover { background: var(--hover); }
+button:active { transform: translateY(1px); }
+button:focus-visible, .clickable:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button:disabled { opacity: .5; cursor: default; transform: none; }
+button[aria-pressed="true"], button[aria-expanded="true"] { border-color: var(--done); }
+#helpToggle { min-width: 32px; font-weight: 600; }
+.count.zero { color: var(--muted); }
+.count.zero .dot { background: var(--idle); opacity: .6; }
 .offline {
   background: var(--waiting);
   color: #fff;
@@ -116,7 +128,44 @@ button[aria-pressed="true"] { border-color: var(--done); }
 .room.gate { border-color: var(--waiting); }
 .card.decision { border-left-color: #f1c40f; }
 .card .close { padding: 0 6px; font-size: 12px; }
-.decision-text { white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 11px; margin: 6px 0 0; max-height: 40vh; overflow: auto; color: var(--text); }
+.decision-body { font-family: var(--font-body); font-size: 13px; line-height: 1.4; margin: 8px 0 0; max-height: 50vh; overflow: auto; color: var(--text); overflow-wrap: anywhere; }
+.decision-body .md-h { font-family: var(--font); font-weight: 600; margin: 10px 0 4px; }
+.decision-body .md-h:first-child { margin-top: 0; }
+.decision-body .md-h1 { font-size: 15px; }
+.decision-body .md-h2, .decision-body .md-h3 { font-size: 14px; color: #ecd27a; }
+.decision-body .md-p { margin: 4px 0; }
+.decision-body .md-li { padding-left: 12px; position: relative; margin: 2px 0; }
+.decision-body .md-li::before { content: '•'; position: absolute; left: 2px; color: var(--muted); }
+.decision-body code, .decision-body .md-code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: var(--line); padding: 0 3px; }
+.decision-body .md-code { display: block; padding: 6px; white-space: pre-wrap; margin: 4px 0; }
+/* zoom controls in the company header (ADR-019) */
+.zoombar { display: flex; gap: 4px; margin-left: auto; flex: none; }
+.zoom-btn { font-size: 12px; line-height: 1; padding: 2px 7px; border-width: 1px; }
+.zoom-btn[hidden] { display: none; }
+.room.zoomed canvas { cursor: grab; }
+/* hover label for people and departments */
+.hover {
+  position: fixed; z-index: 20; pointer-events: none; max-width: 260px;
+  background: var(--panel); border: 1px solid var(--line); box-shadow: 0 4px 12px rgba(0, 0, 0, .45);
+  padding: 6px 8px; font-family: var(--font-body); font-size: 12px; line-height: 1.35;
+}
+.hover-title { font-family: var(--font); font-weight: 600; font-size: 14px; }
+.hover-project { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.hover-muted { color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+.hover-hint { color: var(--focus); margin-top: 4px; font-size: 11px; }
+.swatch { width: 10px; height: 10px; display: inline-block; flex: none; border: 1px solid var(--line); }
+@media (hover: none) { .hover { display: none; } }
+/* legend */
+.help {
+  position: fixed; z-index: 30; top: 52px; right: 12px; width: min(320px, calc(100vw - 24px)); max-height: calc(100vh - 70px); overflow: auto;
+  background: var(--panel); border: 2px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, .5); padding: 10px 12px;
+}
+.help-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.help h2 { font-size: 16px; margin: 0; font-weight: 600; }
+.help h3 { font-size: 13px; margin: 10px 0 4px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 400; }
+.help-list { list-style: none; margin: 0; padding: 0; font-family: var(--font-body); font-size: 13px; line-height: 1.4; display: flex; flex-direction: column; gap: 4px; }
+.help-list .dot, .help-list .swatch { vertical-align: -1px; margin-right: 6px; }
+kbd { font-family: var(--font); font-size: 12px; background: var(--card); border: 1px solid var(--line); border-bottom-width: 2px; padding: 0 4px; }
 .room canvas { display: block; image-rendering: pixelated; }
 /* CEO floor (ADR-009): on top, with the team rooms on the rows below */
 .room.floor { border-color: #7a5a1a; }
@@ -138,6 +187,7 @@ button[aria-pressed="true"] { border-color: var(--done); }
 .banner-link { background: none; border: 0; color: #fff; text-decoration: underline; padding: 0; font-size: 15px; }
 .project { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin: 6px 2px 0; display: flex; justify-content: space-between; cursor: pointer; }
 .empty {
+  font-family: var(--font-body);
   position: absolute;
   left: 50%;
   bottom: 24px;
@@ -159,6 +209,9 @@ button[aria-pressed="true"] { border-color: var(--done); }
 .panel.hidden { display: none; }
 .list { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
 .card { background: var(--card); padding: 8px 10px; border-left: 4px solid var(--idle); }
+.card.clickable { cursor: pointer; }
+.card.clickable:hover { background: var(--hover); }
+.project.clickable:hover { color: var(--text); }
 .card.working { border-left-color: var(--working); }
 .card.waiting { border-left-color: var(--waiting); animation: pulse 1s steps(2) infinite; }
 .card.done { border-left-color: var(--done); }
@@ -170,7 +223,7 @@ button[aria-pressed="true"] { border-color: var(--done); }
 .src.claude { background: #d97757; }
 .src.codex { background: #10a37f; }
 .card .status { font-size: 12px; color: var(--muted); white-space: nowrap; }
-.card .task, .card .activity, .card .reason { font-size: 13px; margin-top: 4px; overflow-wrap: anywhere; }
+.card .task, .card .activity, .card .reason { font-family: var(--font-body); font-size: 13px; line-height: 1.35; margin-top: 4px; overflow-wrap: anywhere; }
 .card .task { color: var(--muted); }
 .card .reason { color: var(--waiting); font-weight: 600; }
 @keyframes pulse { 50% { background: #4a2532; } }
@@ -181,4 +234,5 @@ button[aria-pressed="true"] { border-color: var(--done); }
   .topbar h1 { font-size: 16px; flex: 1; }
   .counts { order: 3; flex-basis: 100%; font-size: 14px; }
   .count { white-space: nowrap; }
+  .room.zoomed .room-counts { display: none; } /* room for the zoom controls next to the title */
 }

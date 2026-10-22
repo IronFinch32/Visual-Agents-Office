@@ -38,7 +38,7 @@ function phaseText(tx) {
   return `Phase ${tx.phase} ${name}`.trim();
 }
 
-export function createBuilding(container, { banner, backButton, onRoleClick } = {}) {
+export function createBuilding(container, { banner, backButton, onRoleClick, onHover } = {}) {
   const rooms = new Map(); // room key -> { el, room, title, counts, name, projectKey, waiting }
   const order = []; // team rooms; the CEO floor is laid out on its own
   let present = new Set();
@@ -70,7 +70,29 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
       canvas.setAttribute('aria-label', 'Bedrijf met afdelingen; wie aan welk project werkt staat ook in de lijst');
       entry.name = 'Bedrijf';
       container.append(section);
-      entry.room = createCompany(canvas, { phase, onRoleClick: (project, role) => onRoleClick?.(project, role) });
+      // zoom controls in the header (ADR-019); they never toggle the building focus
+      const bar = el('span', 'zoombar');
+      const zbtn = (text, label, fn) => {
+        const b = el('button', 'zoom-btn', text);
+        b.type = 'button';
+        b.title = label;
+        b.setAttribute('aria-label', label);
+        b.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
+        bar.append(b);
+        return b;
+      };
+      zbtn('−', 'Uitzoomen (-)', () => entry.room.zoomBy(1 / 1.5));
+      zbtn('+', 'Inzoomen (+)', () => entry.room.zoomBy(1.5));
+      const whole = zbtn('Heel bedrijf', 'Heel bedrijf tonen (0)', () => entry.room.resetZoom());
+      whole.hidden = true;
+      header.insertBefore(bar, counts);
+      entry.room = createCompany(canvas, {
+        phase,
+        onRoleClick: (project, role) => onRoleClick?.(project, role),
+        onHover,
+        onZoomChange: (zoomed) => { whole.hidden = !zoomed; section.classList.toggle('zoomed', zoomed); },
+        onWantFocus: () => { if (focusKey !== COMPANY) focus(COMPANY); },
+      });
       order.push(key);
     } else {
       container.append(section);
@@ -248,6 +270,7 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
       if (focusKey === FLOOR) focus(null);
       return;
     }
+    if (!key) rooms.get(COMPANY)?.room.resetZoom?.();
     // FLIP: remember where rooms were, change the layout, then animate from old to new.
     const before = new Map([...rooms].map(([k, r]) => [k, r.el.getBoundingClientRect()]));
     focusKey = key;
@@ -314,7 +337,19 @@ export function createBuilding(container, { banner, backButton, onRoleClick } = 
   }
 
   new ResizeObserver(() => layout()).observe(container);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && focusKey) focus(null); });
+  document.addEventListener('keydown', (e) => {
+    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) return;
+    const company = !ROOMS_VIEW && rooms.get(COMPANY)?.room;
+    if (e.key === 'Escape') {
+      if (company?.isZoomed()) company.resetZoom();
+      else if (focusKey) focus(null);
+      return;
+    }
+    if (!company) return;
+    if (e.key === '+' || e.key === '=') company.zoomBy(1.5);
+    else if (e.key === '-') company.zoomBy(1 / 1.5);
+    else if (e.key === '0') company.resetZoom();
+  });
   backButton?.addEventListener('click', () => focus(null));
   requestAnimationFrame(tick);
 
