@@ -137,12 +137,14 @@ function card(a, now) {
   if (a.activity && a.status !== 'waiting') li.append(el('div', 'activity', a.activity));
   if (a.kind === 'session' && a.cwd) li.title = a.cwd;
   clickable(li, () => building.focus(a.room || a.projectKey));
+  li.dataset.focusKey = `a:${a.id}`;
   return li;
 }
 
 function renderPanel() {
   const now = Date.now() - skew;
   const list = $('list');
+  const focused = list.contains(document.activeElement) ? document.activeElement.dataset.focusKey : null;
   list.replaceChildren();
   if (decision) {
     const li = el('li', 'card decision');
@@ -176,6 +178,7 @@ function renderPanel() {
     head.append(el('span', null, p.name), el('span', null, `${p.agents.length} agent${p.agents.length === 1 ? '' : 's'}`));
     head.title = `${p.title || p.key} — klik om op te lichten`;
     clickable(head, () => building.focus(p.key));
+    head.dataset.focusKey = `p:${p.key}`;
     list.append(head);
     const sessions = p.agents.filter((a) => a.kind === 'session')
       .sort((a, b) => (ORDER[a.status] - ORDER[b.status]) || (a.startedAt - b.startedAt));
@@ -186,6 +189,9 @@ function renderPanel() {
       }
     }
   }
+
+  // the list is rebuilt on every snapshot: keep keyboard focus on the same card
+  if (focused) [...list.querySelectorAll('[data-focus-key]')].find((n) => n.dataset.focusKey === focused)?.focus();
 
   const counts = { waiting: 0, working: 0, done: 0, idle: 0 };
   for (const a of agents) counts[a.status] = (counts[a.status] || 0) + 1;

@@ -961,6 +961,7 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
     isEmpty: () => false,
     debug: () => ({
       L: { W: L.W, H: L.H, zones: L.zones.map((z) => z.id) },
+      cam: { ...camTarget },
       cases: cases.map(({ key, kind, role, meeting, shipped: s, status, color }) => ({ key, kind, role, meeting, shipped: s, status, color })),
       place: [...staff.place],
       handoffs: handoffs.map(({ key, giver, receiver, stage }) => ({ key, giver, receiver, stage })),
