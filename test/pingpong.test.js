@@ -6,8 +6,8 @@ import { createRally, HIT_DUR, PAUSE } from '../web/pingpong.js';
 const seeded = (seed) => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 
 // runs one rally from the serve to its end; returns the events and the sampled ball positions
-function playOut(r, solo = false, side = 0) {
-  r.serve(0, side, solo);
+function playOut(r, side = 0) {
+  r.serve(0, side);
   const events = [];
   const samples = [];
   for (let t = 0; t < 30; t += 1 / 60) {
@@ -15,14 +15,14 @@ function playOut(r, solo = false, side = 0) {
     if (b) samples.push({ t, side: r.hitter(), ...b });
     const ev = r.update(t);
     events.push(...ev.map((e) => ({ ...e, t })));
-    if (ev.some((e) => e.type === 'point' || e.type === 'miss')) break;
+    if (ev.some((e) => e.type === 'point')) break;
   }
   return { events, samples };
 }
 
 test('strokes alternate sides and a rally ends with a point within nine strokes', () => {
   for (let k = 1; k <= 50; k++) {
-    const { events } = playOut(createRally(seeded(k)), false, k % 2);
+    const { events } = playOut(createRally(seeded(k)), k % 2);
     const hits = events.filter((e) => e.type === 'hit');
     const point = events.find((e) => e.type === 'point');
     assert.ok(point, 'the rally ends with a point');
@@ -58,19 +58,9 @@ test('a missed ball flies past the end and the winner serves after the pause', (
   assert.deepEqual(r.update(point.t + PAUSE + 0.01), [{ type: 'hit', side: point.side }]);
 });
 
-test('solo practice comes back to the same side and never scores a point', () => {
-  for (let k = 1; k <= 20; k++) {
-    const { events, samples } = playOut(createRally(seeded(k)), true, 1);
-    assert.ok(events.every((e) => e.type !== 'point'));
-    assert.ok(events.filter((e) => e.type === 'hit').every((e) => e.side === 1));
-    assert.equal(events[events.length - 1].type, 'miss');
-    for (const s of samples) if (s.h >= 0) assert.ok(s.u >= 0.5 - 1e-9, `u ${s.u} stays on the own half`);
-  }
-});
-
 test('a long time jump moves on one stroke per update instead of looping', () => {
   const r = createRally(seeded(3));
-  r.serve(0, 0, false);
+  r.serve(0, 0);
   const ev = r.update(1000);
   assert.equal(ev.length, 1);
   if (ev[0].type === 'hit') assert.ok(r.ball(1000 + HIT_DUR / 2), 'the next stroke starts now, not in the past');

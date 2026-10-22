@@ -340,28 +340,19 @@ export function drawCue(ctx, x1, y1, x2, y2) {
   }
 }
 
-// A table tennis table (ADR-021); (x, y) is the top-left of the top. `folded` (0 left, 1 right) is the half
-// that stands folded up for one player practising, or null.
+// A table tennis table (ADR-021); (x, y) is the top-left of the top.
 export const TT_W = 36;
 export const TT_H = 18;
-export function drawPingPongTable(ctx, x, y, folded = null) {
+export function drawPingPongTable(ctx, x, y) {
   ctx.fillStyle = 'rgba(0,0,0,.25)';
   ctx.beginPath(); ctx.ellipse(x + TT_W / 2, y + TT_H + 6, TT_W / 2 + 1, 2.5, 0, 0, Math.PI * 2); ctx.fill();
   rect(ctx, x + 2, y + TT_H + 2, 2, 4, '#3a3a44'); // legs
   rect(ctx, x + TT_W - 4, y + TT_H + 2, 2, 4, '#3a3a44');
   rect(ctx, x + 1, y + TT_H, TT_W - 2, 2, '#1d5435'); // edge
+  rect(ctx, x, y, TT_W, TT_H, '#e8e8e8'); // white border
+  rect(ctx, x + 1, y + 1, TT_W - 2, TT_H - 2, '#2e7d4f');
+  rect(ctx, x + 1, y + TT_H / 2, TT_W - 2, 1, 'rgba(232,232,232,.6)'); // centre line
   const half = TT_W / 2;
-  for (const side of [0, 1]) {
-    const hx = x + side * half;
-    if (side === folded) { // seen from the front: a board standing on the net line
-      rect(ctx, hx, y - 10, half, TT_H + 10, '#e8e8e8');
-      rect(ctx, hx + 1, y - 9, half - 2, TT_H + 8, '#25663f');
-      continue;
-    }
-    rect(ctx, hx, y, half, TT_H, '#e8e8e8'); // white border
-    rect(ctx, hx + (side ? 0 : 1), y + 1, half - 1, TT_H - 2, '#2e7d4f');
-    rect(ctx, hx + (side ? 0 : 1), y + TT_H / 2, half - 1, 1, 'rgba(232,232,232,.6)'); // centre line
-  }
   rect(ctx, x + half - 1, y - 3, 2, TT_H + 3, 'rgba(220,220,230,.75)'); // net
   rect(ctx, x + half - 1, y - 4, 2, 1, '#3a3a44');
   rect(ctx, x + half - 1, y + TT_H - 1, 2, 1, '#3a3a44');

@@ -78,7 +78,7 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
   let lullNow = false;
   let shipped = new Set();
   let darts = { turn: 0, next: 0, stuck: [], flying: null };
-  let pingpong = { rally: createRally(), players: '', swing: [0, 0], folded: null };
+  let pingpong = { rally: createRally(), players: '', swing: [0, 0] };
   let pool = { game: createPoolGame(), turn: 0, next: 0, shots: 0, shooter: null, stay: null, aim: 0, angle: 0, stance: null, by: null, held: null };
 
   // ---------- geometry ----------
@@ -362,6 +362,11 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
     const dartsTaken = new Set(members.filter((mb) => mb.mode === 'darts' && t < mb.modeUntil).map((mb) => mb.dartSpot));
     const poolTaken = new Set(members.filter((mb) => mb.mode === 'pool' && t < mb.modeUntil).map((mb) => mb.poolSpot));
     const ttTaken = new Set(members.filter((mb) => mb.mode === 'pingpong' && t < mb.modeUntil).map((mb) => mb.ttSpot));
+    const available = (mb) => {
+      const mc = caseOf(mb);
+      return !quiet && !partyOn && !mb.hidden && !(mc && (mc.status === 'working' || mc.status === 'waiting'))
+        && !handoffs.some((x) => x.giver === mb.id || x.receiver === mb.id) && !(inLounge(mb) && t < mb.modeUntil);
+    };
     for (const ch of members) {
       const c = caseOf(ch);
       const busy = c && (c.status === 'working' || c.status === 'waiting');
@@ -375,13 +380,20 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
       else if (loungeCount < (lull ? 8 : 4) && Math.random() < dt / (lull ? 8 : c ? 40 : 25)) {
         const free = [0, 1].find((i) => !dartsTaken.has(i));
         const freeCue = [0, 1].find((i) => !poolTaken.has(i));
-        const freeBat = [0, 1].find((i) => !ttTaken.has(i));
+        let mate = null;
         const r = Math.random();
         if (free !== undefined && r < 0.25) { mode = 'darts'; ch.dartSpot = free; dartsTaken.add(free); }
         else if (freeCue !== undefined && r < 0.5) { mode = 'pool'; ch.poolSpot = freeCue; poolTaken.add(freeCue); }
-        else if (freeBat !== undefined && r < 0.75) { mode = 'pingpong'; ch.ttSpot = freeBat; ttTaken.add(freeBat); }
+        else if (!ttTaken.size && r < 0.75 && (mate = members.find((mb) => mb !== ch && available(mb)))) {
+          // table tennis only as a pair (ADR-022): the partner comes along, also when it was handled earlier this frame
+          mode = 'pingpong'; ch.ttSpot = 0; ttTaken.add(0).add(1);
+          Object.assign(mate, { mode: 'pingpong', ttSpot: 1, seatAt: null, loungeSpot: undefined });
+          const s = ttSpot(1); goTo(mate, s.x, s.y);
+          loungeCount++;
+        }
         else mode = 'coffee';
         ch.modeUntil = t + (lull ? 15 + Math.random() * 20 : 12 + Math.random() * 13);
+        if (mate) mate.modeUntil = ch.modeUntil;
         loungeCount++;
       }
       if (ch.mode === 'away' && mode !== 'away') { ch.hidden = false; const dd = door(); Object.assign(ch, { x: dd.x, y: dd.y, path: [], goal: null }); }
@@ -399,6 +411,9 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
       if (mode !== 'pool') ch.poolSpot = undefined;
       if (mode !== 'pingpong') ch.ttSpot = undefined;
     }
+    // a player whose partner left the table leaves too (ADR-022)
+    const atTable = members.filter((mb) => mb.mode === 'pingpong');
+    if (atTable.length === 1) atTable[0].modeUntil = t;
     playDarts(members.filter((mb) => mb.mode === 'darts' && !mb.walking && !mb.hidden), t);
     playPool(members.filter((mb) => mb.mode === 'pool' && !mb.hidden), t, dt);
     playPingPong(members.filter((mb) => mb.mode === 'pingpong' && !mb.walking && !mb.hidden), t);
@@ -533,17 +548,16 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
     Object.assign(pool, { shooter: p, stay: null, aim: 0, stance: poolStance(pool.angle) });
   }
 
-  // table tennis (ADR-021): a new rally whenever the players at the table change
+  // table tennis (ADR-021/022): a new rally whenever the pair at the table changes
   function playPingPong(players, t) {
     const pp = pingpong;
     const key = players.map((p) => `${p.id}@${p.ttSpot}`).sort().join();
     if (key !== pp.players) {
       pp.players = key;
-      pp.folded = players.length === 1 ? 1 - players[0].ttSpot : null; // practising against the other half
-      if (!players.length) pp.rally.stop();
+      if (players.length < 2) pp.rally.stop(); // never solo (ADR-022): wait until both stand at the table
       else {
-        const side = players.length === 1 ? players[0].ttSpot : Math.round(Math.random());
-        pp.rally.serve(t, side, players.length === 1);
+        const side = Math.round(Math.random());
+        pp.rally.serve(t, side);
         pp.swing[side] = t;
       }
     }
@@ -551,7 +565,6 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
       if (e.type === 'hit') { pp.swing[e.side] = t; continue; }
       const by = players.find((p) => p.ttSpot === e.side);
       if (e.type === 'point' && by && Math.random() < 0.45) by.say = { text: TT_CHAT[Math.floor(Math.random() * TT_CHAT.length)], until: t + 1.8 };
-      if (e.type === 'miss' && by && Math.random() < 0.3) by.say = { text: 'Oeps', until: t + 1.8 };
     }
   }
 
@@ -657,10 +670,10 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
       overlays.push(() => drawCue(ctx, ch.x + 6, ch.y - 22, ch.x + 6, ch.y - 2));
     }
     const tt = ttTable();
-    const ttFolded = pingpong.folded;
-    scene.push({ y: tt.y + TT_H + 4, draw: () => drawPingPongTable(ctx, tt.x, tt.y, ttFolded) });
+    scene.push({ y: tt.y + TT_H + 4, draw: () => drawPingPongTable(ctx, tt.x, tt.y) });
     for (const ch of chars.values()) {
-      if (ch.mode !== 'pingpong' || ch.walking || ch.hidden || ch.ttSpot === undefined) continue;
+      // paddles only once the pair is playing, not while the first one waits for the other to arrive
+      if (!pingpong.rally.playing() || ch.mode !== 'pingpong' || ch.walking || ch.hidden || ch.ttSpot === undefined) continue;
       const dir = ch.ttSpot ? -1 : 1;
       const reach = t - pingpong.swing[ch.ttSpot] < 0.15 ? 2 : 0;
       overlays.push(() => drawPaddle(ctx, ch.x + dir * (6 + reach), ch.y - 10));
