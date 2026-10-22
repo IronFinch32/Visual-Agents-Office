@@ -23,3 +23,4 @@
 - [one-company](one-company.md) — Pass, 102/102
 - [bubble-project-label](bubble-project-label.md) — Pass
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
+- [ux-polish](ux-polish.md) — Pass — reviews/2026-10-22-ux-polish-qa-report.md

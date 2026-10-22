@@ -335,7 +335,7 @@
 - [x] Phase 3: Design
 - [x] Phase 4: Planning
 - [x] Phase 5: Implementation
-- [ ] Phase 6: Verification
+- [x] Phase 6: Verification
 - [ ] Phase 7: Delivery
 - [ ] Phase 8: Launch
 
@@ -349,3 +349,6 @@
 - [x] T5 markdown.js + app: label, legenda, rolnamen, kaart-klik, tellers
 - [x] T6 CSS + browsercheck
 - Code: 3427ef6 · tests 118/118
+
+## Verification
+- QA Pass, security Approved, design Approved — `reviews/2026-10-22-ux-polish-*.md`. Fix d64b633 (focus in lijst).

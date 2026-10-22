@@ -21,3 +21,4 @@
 - [one-company](one-company.md) — Approved; departments.json gesaneerd
 - [bubble-project-label](bubble-project-label.md) — Approved
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
+- [ux-polish](ux-polish.md) — Approved — geen innerHTML, begrensde regex
