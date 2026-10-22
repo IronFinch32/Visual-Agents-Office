@@ -1,1 +1,1 @@
-{ "role": "qa", "phase": 6, "phaseName": "Verification", "feature": "lounge-table-tennis", "task": "Tafeltennis in de lounge testen", "route": "build", "updatedAt": "2026-10-22T09:46:36Z" }
+{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "lounge-table-tennis", "task": "Opgeleverd: tafeltennis in de lounge", "route": "build", "updatedAt": "2026-10-22T09:47:53Z" }

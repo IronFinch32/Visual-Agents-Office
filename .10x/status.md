@@ -391,9 +391,9 @@ change — sde, qa, security
 - [x] Phase 3: Design — ADR-021
 - [x] Phase 4: Planning
 - [x] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
-- [ ] Phase 8: Launch
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
+- [x] Phase 8: Launch — skipped (nothing to launch)
 
 ## Route
 build — sde, ui-designer, qa
@@ -406,3 +406,9 @@ build — sde, ui-designer, qa
 - [x] T3 company.js
 - [x] T4 browsercheck (:4848, solo en duo gezien)
 - Code: cfdc8ff · tests 127/127 (serverproeven buiten de sandbox gedraaid: lokale poort mag niet binnen de sandbox)
+
+## Verification
+- QA Pass, Security Approved, design Approved — `reviews/2026-10-22-lounge-table-tennis-*.md`. Fix da9c6e2 (pool-speler niet op de tafeltennistafel).
+
+## Delivery
+- Live op :4747 (statische bestanden, geen herstart nodig). Niets gepusht.

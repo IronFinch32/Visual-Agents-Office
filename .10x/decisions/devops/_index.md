@@ -19,3 +19,4 @@
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
 - [ux-polish](ux-polish.md) — Ready to release — service herstart, rollback via revert
 - [shipped-active-feature](shipped-active-feature.md)
+- [lounge-table-tennis](lounge-table-tennis.md) — Ready to release — statische web-bestanden, geen herstart

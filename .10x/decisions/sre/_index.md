@@ -18,3 +18,4 @@
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
 - [ux-polish](ux-polish.md) — geen nieuwe monitoring nodig
 - [shipped-active-feature](shipped-active-feature.md)
+- [lounge-table-tennis](lounge-table-tennis.md) — geen nieuwe monitoring nodig

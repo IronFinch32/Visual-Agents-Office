@@ -1,4 +1,4 @@
-# Handoff — lounge-table-tennis → QA / Security / design review
+# Handoff — lounge-table-tennis (afgerond)
 
-Gebouwd in cfdc8ff: `web/pingpong.js`, `test/pingpong.test.js`, lijm in `web/company.js`, sprites in `web/tenx-sprites.js`.
-Te testen: rally-unit tests, lounge-indeling (niemand op tafel/bank), solo ↔ duo-wissel, spelers die weglopen midden in een rally, ballon bij punt.
+Tafeltennis staat in de lounge, live op :4747 (pagina herladen). Code: cfdc8ff + fix da9c6e2. ADR-021, spec `specs/2026-10-22-lounge-table-tennis-design.md`, reviews in `reviews/2026-10-22-lounge-table-tennis-*`.
+Launch overgeslagen: niets te lanceren. Niets gepusht naar GitHub.

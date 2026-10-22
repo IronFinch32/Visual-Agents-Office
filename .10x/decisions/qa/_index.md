@@ -25,3 +25,4 @@
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
 - [ux-polish](ux-polish.md) — Pass — reviews/2026-10-22-ux-polish-qa-report.md
 - [shipped-active-feature](shipped-active-feature.md)
+- [lounge-table-tennis](lounge-table-tennis.md) — Pass — reviews/2026-10-22-lounge-table-tennis-qa-report.md
