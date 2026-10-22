@@ -1,4 +1,3 @@
-# Handoff — lounge-table-tennis (afgerond)
+# Handoff — table-tennis-pairs-only → SDE
 
-Tafeltennis staat in de lounge, live op :4747 (pagina herladen). Code: cfdc8ff + fix da9c6e2. ADR-021, spec `specs/2026-10-22-lounge-table-tennis-design.md`, reviews in `reviews/2026-10-22-lounge-table-tennis-*`.
-Launch overgeslagen: niets te lanceren. Gepusht naar origin/main (b51d8e0) op 2026-10-22.
+Bouw ADR-022: duo-keuze en eenling-vertrek in `company.js`, rally alleen bij 2 spelers, solo weg uit `pingpong.js`, `drawPingPongTable` zonder `folded`, tests bijwerken.

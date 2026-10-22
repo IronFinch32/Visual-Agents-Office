@@ -26,3 +26,4 @@
 - [ux-polish](ux-polish.md) — camera-module, zoom-API, hover-callback (ADR-019)
 - [shipped-active-feature](shipped-active-feature.md) — ADR-020
 - [lounge-table-tennis](lounge-table-tennis.md) — pingpong.js puur + lijm in company.js (ADR-021)
+- [table-tennis-pairs-only](table-tennis-pairs-only.md) — duo-keuze + geen solo (ADR-022)

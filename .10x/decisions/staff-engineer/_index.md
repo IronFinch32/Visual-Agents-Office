@@ -20,3 +20,4 @@
 - [ux-polish](ux-polish.md) — pure modules + node --test, geen innerHTML
 - [shipped-active-feature](shipped-active-feature.md)
 - [lounge-table-tennis](lounge-table-tennis.md) — zelfde patroon als pool.js; geen deps
+- [table-tennis-pairs-only](table-tennis-pairs-only.md) — zelfde patroon, code verwijderen

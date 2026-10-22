@@ -412,3 +412,21 @@ build — sde, ui-designer, qa
 
 ## Delivery
 - Live op :4747 (statische bestanden, geen herstart nodig). Gepusht naar origin/main (622cd27..b51d8e0, 24 commits).
+
+# Status — table-tennis-pairs-only
+
+- [x] Phase 0: Brainstorming
+- [x] Phase 1: Strategy — skipped (route: change)
+- [x] Phase 2: Experience Design — skipped (gedrag vastgelegd in spec, geen nieuw scherm)
+- [x] Phase 3: Design — ADR-022
+- [x] Phase 4: Planning — skipped (route: change)
+- [ ] Phase 5: Implementation
+- [ ] Phase 6: Verification
+- [ ] Phase 7: Delivery
+- [ ] Phase 8: Launch
+
+## Route
+change — sde, qa
+
+## Progress
+- Melding: één speler speelt alleen, lijkt tegen een muur. Gebruiker koos: alleen als duo. Spec `specs/2026-10-22-table-tennis-pairs-only-design.md`, ADR-022.
