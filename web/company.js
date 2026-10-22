@@ -132,7 +132,8 @@ export function createCompany(canvas, { phase: getPhase, onRoleClick, onHover, o
       hy = by - Math.sin(angle) * d;
       if (hx <= tb.x - 5 || hx >= tb.x + POOL_W + 5 || hy <= tb.y - 12 || hy >= tb.y + POOL_H) break;
     }
-    return { x: Math.max(z.x + 8, Math.min(z.x + z.w - 8, hx)), y: Math.max(z.y + 28, Math.min(z.y + 104, hy + 9)) };
+    // never lower than the table tennis table below it
+    return { x: Math.max(z.x + 8, Math.min(z.x + z.w - 8, hx)), y: Math.max(z.y + 28, Math.min(z.y + TT_TABLE[1] - 2, hy + 9)) };
   }
 
   function buildNav() {
