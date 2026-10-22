@@ -336,8 +336,8 @@
 - [x] Phase 4: Planning
 - [x] Phase 5: Implementation
 - [x] Phase 6: Verification
-- [ ] Phase 7: Delivery
-- [ ] Phase 8: Launch
+- [x] Phase 7: Delivery
+- [x] Phase 8: Launch — skipped (nothing to launch: intern hulpmiddel)
 
 ## Progress
 - Idee van de CEO: met UI/UX kijken wat het kantoor mooier, beter en gebruiksvriendelijker maakt.
@@ -352,3 +352,6 @@
 
 ## Verification
 - QA Pass, security Approved, design Approved — `reviews/2026-10-22-ux-polish-*.md`. Fix d64b633 (focus in lijst).
+
+## Delivery
+- Live op :4747 (service herstart 2026-10-22); CEO-taak zonder `<system-reminder>` gecontroleerd. Niets gepusht.
