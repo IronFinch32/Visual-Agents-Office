@@ -1,1 +1,1 @@
-{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "ux-polish", "task": "Opgeleverd: inzoomen, hover-labels en een schonere lijst", "updatedAt": "2026-10-22T07:38:22Z" }
+{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "shipped-active-feature", "task": "Status-sectie van de actieve feature lezen (ADR-020)", "route": "change", "updatedAt": "2026-10-22T07:51:38Z" }
