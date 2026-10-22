@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  roleFromSkill, roleFromPath, guessRole, parsePhase, isCodeFile, reviewVerdict, createTenx, MEETING,
+  roleFromSkill, roleFromPath, guessRole, parsePhase, statusSection, isCodeFile, reviewVerdict, createTenx, MEETING,
 } from '../server/tenx.js';
 import { nodeFs, createServer } from '../server/server.js';
 
@@ -464,4 +464,53 @@ test('Plus project: Launch keeps the project open; a skipped Launch completes it
   tenx.refresh(root);
   snap = tenx.snapshot()[root];
   assert.equal(snap.complete, true, 'Launch skipped: active.json stays at Delivery, still complete');
+});
+
+test('statusSection picks the active feature\'s section wherever it sits', () => {
+  const text = '# Status — a\n- [x] Phase 0\n\n# Status — `b`\n- [ ] Phase 0\n\n# Status — c\n- [x] Phase 0\n';
+  assert.deepEqual(statusSection(text, 'B'), { text: '# Status — `b`\n- [ ] Phase 0\n\n', feature: 'b' });
+  assert.deepEqual(statusSection(text, 'missing'), { text, feature: 'c' }, 'no match: whole text, as before');
+  assert.equal(statusSection('- [x] Phase 0', 'a').feature, null);
+});
+
+test('A feature mid-file keeps the project open, even with a finished section below it (ADR-020)', () => {
+  const { root, x } = project();
+  mkdirSync(join(x, 'decisions', 'ux-designer'), { recursive: true });
+  const phases = (ticked, upTo) => [...Array(upTo + 1).keys()].map((n) => `- [${n <= ticked ? 'x' : ' '}] Phase ${n}`).join('\n');
+  // Aruba's layout: the running feature, then an abandoned one, then a finished pre-Launch section.
+  writeFileSync(join(x, 'status.md'), [
+    '# Status — live', phases(6, 8), '## Route\nbuild',
+    '# Status — later', phases(-1, 7),
+    '# Status — photos', phases(7, 7), '',
+  ].join('\n\n'));
+  writeFileSync(join(x, 'active.json'), JSON.stringify({ role: 'security', phase: 6, phaseName: 'Verification', feature: 'live', task: 't', updatedAt: new Date().toISOString() }));
+  const tenx = createTenx({ fs: nodeFs });
+  tenx.onEvent({ session_id: 's', hook_event_name: 'SessionStart' }, agent(root));
+  tenx.onEvent(pre('Read', { file_path: join(root, 'README.md') }), agent(root));
+  let snap = tenx.snapshot()[root];
+  assert.equal(snap.complete, false, 'not SHIPPED while Verification runs');
+  assert.equal(snap.phase, 6);
+  assert.deepEqual(snap.done, [0, 1, 2, 3, 4, 5, 6]);
+
+  // An old active.json still names the feature, so its section is still the one read.
+  const old = new Date(Date.now() - 7 * 3600 * 1000);
+  utimesSync(join(x, 'active.json'), old, old);
+  const later = createTenx({ fs: nodeFs });
+  later.onEvent({ session_id: 's', hook_event_name: 'SessionStart' }, agent(root));
+  later.onEvent(pre('Read', { file_path: join(root, 'README.md') }), agent(root));
+  snap = later.snapshot()[root];
+  assert.equal(snap.complete, false);
+  assert.deepEqual(snap.done, [0, 1, 2, 3, 4, 5, 6]);
+});
+
+test('Launch skipped in the active feature\'s own section still completes it (ADR-018 + ADR-020)', () => {
+  const { root, x } = project();
+  mkdirSync(join(x, 'decisions', 'ux-designer'), { recursive: true });
+  const all = [0, 1, 2, 3, 4, 5, 6, 7].map((n) => `- [x] Phase ${n}`).join('\n');
+  writeFileSync(join(x, 'status.md'), `# Status — f\n${all}\n- [x] Phase 8: Launch — skipped (nothing to launch)\n\n# Status — old\n- [ ] Phase 0\n`);
+  writeFileSync(join(x, 'active.json'), JSON.stringify({ role: 'devops', phase: 7, phaseName: 'Delivery', feature: 'f', task: 't', updatedAt: new Date().toISOString() }));
+  const tenx = createTenx({ fs: nodeFs });
+  tenx.onEvent({ session_id: 's', hook_event_name: 'SessionStart' }, agent(root));
+  tenx.onEvent(pre('Read', { file_path: join(root, 'README.md') }), agent(root));
+  assert.equal(tenx.snapshot()[root].complete, true);
 });

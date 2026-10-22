@@ -186,6 +186,21 @@ export function parsePhase(text, maxPhase = 6, flavor = maxPhase >= 7 ? 'plus' :
   return null;
 }
 
+const statusFeature = (section) => /^#\s*Status\s*[—–-]+\s*`?([^`\n]+?)`?\s*$/im.exec(section)?.[1].toLowerCase() || null;
+
+/**
+ * The status.md part for `feature` (from active.json): its "# Status — <feature>" section, wherever
+ * it sits in the file. No match → the whole text, as before, with the feature of the last section (ADR-020).
+ */
+export function statusSection(text, feature) {
+  const sections = String(text || '').split(/^(?=#\s)/m);
+  const want = String(feature || '').trim().toLowerCase();
+  const own = want ? sections.find((s) => statusFeature(s) === want) : null;
+  if (own) return { text: own, feature: want };
+  const last = sections.map(statusFeature).filter(Boolean).pop() || null;
+  return { text: String(text || ''), feature: last };
+}
+
 export function reviewVerdict(text) {
   return /afgekeurd|rejected|blocker|\bfail(ed)?\b|not approved|niet goedgekeurd/i.test(text || '') ? 'rejected' : 'approved';
 }
@@ -260,7 +275,18 @@ export function createTenx({ fs, now = () => Date.now() }) {
     if (!p.enabled) return;
     const statusText = fs.readText(join(dir, 'status.md'));
     if (isPlusSignal({ statusText }) || fs.exists(join(dir, 'decisions', 'ux-designer')) || fs.exists(join(dir, 'decisions', 'ui-designer'))) p.flavor = 'plus';
-    const status = parsePhase(statusText, lastPhase(p.flavor), p.flavor);
+    // The plugin's own record of who is working (ADR-008).
+    const activeFile = fs.list(dir).find((f) => f.name === 'active.json');
+    const active = activeFile ? parseActive(fs.readText(join(dir, 'active.json'))) : null;
+    // The file's mtime is when it was really written; updatedAt is typed by Claude and can be off (ADR-015).
+    if (active) active.at = activeFile.mtimeMs ?? active.at;
+    p.active = active && now() - active.at < ACTIVE_MAX_AGE_MS ? active : null;
+    if (p.active && (p.active.phase >= 7 || PLUS_ONLY_ROLES.test(p.active.role) || /experience design|launch/i.test(p.active.phaseName))) p.flavor = 'plus';
+
+    // The section of the feature active.json names, wherever it sits; an old active.json still names it (ADR-020).
+    const section = statusSection(statusText, active?.feature);
+    p.statusFeature = section.feature;
+    const status = parsePhase(section.text, lastPhase(p.flavor), p.flavor);
     if (status) Object.assign(p, status);
     p.adrs = fs.list(join(dir, 'adrs'))
       .filter((f) => f.name.endsWith('.md'))
@@ -276,13 +302,6 @@ export function createTenx({ fs, now = () => Date.now() }) {
     }
     p.reviews = reviews;
 
-    // The plugin's own record of who is working (ADR-008).
-    const activeFile = fs.list(dir).find((f) => f.name === 'active.json');
-    const active = activeFile ? parseActive(fs.readText(join(dir, 'active.json'))) : null;
-    // The file's mtime is when it was really written; updatedAt is typed by Claude and can be off (ADR-015).
-    if (active) active.at = activeFile.mtimeMs ?? active.at;
-    p.active = active && now() - active.at < ACTIVE_MAX_AGE_MS ? active : null;
-    if (p.active && (p.active.phase >= 7 || PLUS_ONLY_ROLES.test(p.active.role) || /experience design|launch/i.test(p.active.phaseName))) p.flavor = 'plus';
 
     // Kanban: tasks from the newest engineering-manager decision.
     const newest = (role) => fs.list(join(dir, 'decisions', role))
@@ -291,7 +310,7 @@ export function createTenx({ fs, now = () => Date.now() }) {
     const em = newest('engineering-manager');
     const sde = newest('sde');
     const sdeText = sde ? fs.readText(join(dir, 'decisions', 'sde', sde.name)) : '';
-    const lastSection = String(statusText || '').split(/^(?=#\s)/m).pop();
+    const lastSection = section.text.split(/^(?=#\s)/m).pop();
     p.kanban = em ? parseTasks(fs.readText(join(dir, 'decisions', 'engineering-manager', em.name)))
       .map((t) => ({ ...t, done: taskDone(t.id, lastSection, sdeText) })) : [];
 
@@ -313,7 +332,9 @@ export function createTenx({ fs, now = () => Date.now() }) {
     if (!fromActive(p) || p.active.phase === null) return false;
     const last = p.last ?? lastPhase(p.flavor);
     // Launch skipped: the plugin leaves active.json at Delivery while status.md ticks Launch (ADR-018).
-    const skippedLast = FLAVORS[p.flavor].optionalLast && p.active.phase === last - 1 && p.done.includes(last);
+    // Only when the section read is this feature's: another feature's ticked Delivery is not a skipped Launch (ADR-020).
+    const ownSection = !p.statusFeature || !p.active.feature || p.statusFeature === p.active.feature.trim().toLowerCase();
+    const skippedLast = FLAVORS[p.flavor].optionalLast && ownSection && p.active.phase === last - 1 && p.done.includes(last);
     return p.active.phase < last && !skippedLast;
   }
 
