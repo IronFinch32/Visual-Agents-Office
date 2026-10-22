@@ -1,4 +1,4 @@
-# Handoff — lounge-table-tennis → SDE
+# Handoff — lounge-table-tennis → QA / Security / design review
 
-Bouw volgens ADR-021 en `decisions/senior-engineer/lounge-table-tennis.md`:
-T1 `web/pingpong.js` + `test/pingpong.test.js`, T2 sprites in `web/tenx-sprites.js`, T3 lijm in `web/company.js` (modus `pingpong`, plekken rechtsonder, loungeplekken verschuiven), T4 browsercheck op :4848.
+Gebouwd in cfdc8ff: `web/pingpong.js`, `test/pingpong.test.js`, lijm in `web/company.js`, sprites in `web/tenx-sprites.js`.
+Te testen: rally-unit tests, lounge-indeling (niemand op tafel/bank), solo ↔ duo-wissel, spelers die weglopen midden in een rally, ballon bij punt.

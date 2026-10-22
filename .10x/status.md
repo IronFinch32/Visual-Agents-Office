@@ -390,7 +390,7 @@ change — sde, qa, security
 - [x] Phase 2: Experience Design
 - [x] Phase 3: Design — ADR-021
 - [x] Phase 4: Planning
-- [ ] Phase 5: Implementation
+- [x] Phase 5: Implementation
 - [ ] Phase 6: Verification
 - [ ] Phase 7: Delivery
 - [ ] Phase 8: Launch
@@ -401,7 +401,8 @@ build — sde, ui-designer, qa
 ## Progress
 - Gebruiker koos: rally met missers. Spec `specs/2026-10-22-lounge-table-tennis-design.md` goedgekeurd. ADR-021.
 - Strategy: geen commerciële impact (zie PM). Launch overgeslagen.
-- [ ] T1 pingpong.js + tests
-- [ ] T2 sprites
-- [ ] T3 company.js
-- [ ] T4 browsercheck
+- [x] T1 pingpong.js + tests
+- [x] T2 sprites
+- [x] T3 company.js
+- [x] T4 browsercheck (:4848, solo en duo gezien)
+- Code: cfdc8ff · tests 127/127 (serverproeven buiten de sandbox gedraaid: lokale poort mag niet binnen de sandbox)

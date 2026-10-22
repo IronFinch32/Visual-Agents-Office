@@ -1,1 +1,1 @@
-{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "lounge-table-tennis", "task": "pingpong.js en tafeltennis in de lounge bouwen", "route": "build", "updatedAt": "2026-10-22T09:40:11Z" }
+{ "role": "qa", "phase": 6, "phaseName": "Verification", "feature": "lounge-table-tennis", "task": "Tafeltennis in de lounge testen", "route": "build", "updatedAt": "2026-10-22T09:46:36Z" }

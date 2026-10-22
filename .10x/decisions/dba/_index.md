@@ -16,3 +16,4 @@ No database in this project (in-memory state by design, ADR-001).
 - [bubble-project-label](bubble-project-label.md) — n.v.t.
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
 - [ux-polish](ux-polish.md) — geen datawijziging
+- [lounge-table-tennis](lounge-table-tennis.md) — n.v.t.
