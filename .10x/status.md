@@ -363,15 +363,22 @@
 - [x] Phase 2: Experience Design — skipped (geen UI-wijziging)
 - [x] Phase 3: Design — ADR-020
 - [x] Phase 4: Planning — skipped (route: change)
-- [ ] Phase 5: Implementation
-- [ ] Phase 6: Verification
-- [ ] Phase 7: Delivery
-- [ ] Phase 8: Launch
+- [x] Phase 5: Implementation
+- [x] Phase 6: Verification
+- [x] Phase 7: Delivery
+- [x] Phase 8: Launch — skipped (route: change)
 
 ## Route
 change — sde, qa, security
 
 ## Progress
 - Melding CEO: kantoor toont SHIPPED bij Aruba digital tour guide terwijl de sessie daar nog loopt.
-- Diagnose: live `/api/state` geeft Aruba `phase 6, done [0..7], complete: true`. `parsePhase` leest de láátste `# Status`-sectie (`plekfotos-achtergrond`, 0–7 afgevinkt, zonder Phase 8 → last=7), terwijl de lopende feature `eerste-livegang-netlify` middenin het bestand staat. De Launch-skip-uitzondering in `activeBehind` (ADR-018) ziet active fase 6 = last−1 én fase 7 afgevinkt → "Launch overgeslagen" → complete.
+- Diagnose: live `/api/state` toonde Aruba als afgerond terwijl Verification liep. `parsePhase` leest de láátste `# Status`-sectie (`plekfotos-achtergrond`, 0–7 afgevinkt, zonder Phase 8 → last=7), terwijl de lopende feature `eerste-livegang-netlify` middenin het bestand staat. De Launch-skip-uitzondering in `activeBehind` (ADR-018) ziet active fase 6 = last−1 én fase 7 afgevinkt → "Launch overgeslagen" → complete.
 - CEO keurde het ontwerp goed. Spec `specs/2026-10-22-shipped-active-feature-design.md`, ADR-020.
+- Code: e7726aa · tests 121/121
+
+## Verification
+- QA Pass, Security Approved — `reviews/2026-10-22-shipped-active-feature-*.md`. Echte Aruba-data: nu fase 7, niet afgerond (oude code: afgerond).
+
+## Delivery
+- Live op :4747 (service herstart 2026-10-22). Niets gepusht.

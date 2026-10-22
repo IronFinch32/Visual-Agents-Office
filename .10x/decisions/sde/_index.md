@@ -21,3 +21,4 @@
 - [bubble-project-label](bubble-project-label.md) — bubbleHeader + drawBubble header (9f469e0)
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
 - [ux-polish](ux-polish.md) — camera-zoom, hover, schone lijst, legenda (3427ef6)
+- [shipped-active-feature](shipped-active-feature.md)

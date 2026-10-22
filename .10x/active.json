@@ -1,1 +1,1 @@
-{ "role": "sde", "phase": 5, "phaseName": "Implementation", "feature": "shipped-active-feature", "task": "Status-sectie van de actieve feature lezen (ADR-020)", "route": "change", "updatedAt": "2026-10-22T07:51:38Z" }
+{ "role": "devops", "phase": 7, "phaseName": "Delivery", "feature": "shipped-active-feature", "task": "Opgeleverd: kantoor leest de sectie van de actieve feature", "route": "change", "updatedAt": "2026-10-22T07:54:11Z" }
