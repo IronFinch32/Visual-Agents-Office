@@ -411,4 +411,4 @@ build — sde, ui-designer, qa
 - QA Pass, Security Approved, design Approved — `reviews/2026-10-22-lounge-table-tennis-*.md`. Fix da9c6e2 (pool-speler niet op de tafeltennistafel).
 
 ## Delivery
-- Live op :4747 (statische bestanden, geen herstart nodig). Niets gepusht.
+- Live op :4747 (statische bestanden, geen herstart nodig). Gepusht naar origin/main (622cd27..b51d8e0, 24 commits).
