@@ -1,6 +1,5 @@
-# Handoff — go-to-market-departments
+# Handoff — ux-polish
 
-**Status:** opgeleverd (Phase 7; Phase 8 skipped — intern hulpmiddel). Commit dd7becf; ADR-018.
-- Het kantoor herkent de 5 go-to-market-rollen en fase 8 Launch; eigen looks in Marketing, Sales, Customer Success, Legal & Finance.
-- Een project is pas klaar na Phase 8 (of "skipped"); oude secties t/m Phase 7 blijven klaar.
-- Rollback: `git revert dd7becf` + `launchctl kickstart -k gui/$UID/com.visualagentsoffice`. Niets gepusht.
+**Status:** Phase 4 klaar → SDE. Spec `specs/2026-10-22-ux-polish-design.md`, ADR-019.
+Taken T1–T6 in `decisions/engineering-manager/ux-polish.md`, aanpak in `decisions/senior-engineer/ux-polish.md`.
+Let op: hit-test en tekenen delen één `view`; geen innerHTML voor beslissingstekst; reduced motion.

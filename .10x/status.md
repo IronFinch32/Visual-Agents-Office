@@ -329,11 +329,11 @@
 
 # Status — ux-polish
 
-- [ ] Phase 0: Brainstorming
-- [ ] Phase 1: Strategy
-- [ ] Phase 2: Experience Design
-- [ ] Phase 3: Design
-- [ ] Phase 4: Planning
+- [x] Phase 0: Brainstorming
+- [x] Phase 1: Strategy
+- [x] Phase 2: Experience Design
+- [x] Phase 3: Design
+- [x] Phase 4: Planning
 - [ ] Phase 5: Implementation
 - [ ] Phase 6: Verification
 - [ ] Phase 7: Delivery
@@ -341,3 +341,10 @@
 
 ## Progress
 - Idee van de CEO: met UI/UX kijken wat het kantoor mooier, beter en gebruiksvriendelijker maakt.
+- Gebruiker koos: "Plus echt inzoomen" en keurde het ontwerp goed ("Akkoord, bouwen"). Spec `specs/2026-10-22-ux-polish-design.md` (da959a5). ADR-019.
+- [ ] T1 cleanPrompt server + tests
+- [ ] T2 camera.js + tests
+- [ ] T3 camera, hover, hit-test in company.js
+- [ ] T4 building: zoomknoppen, Esc-volgorde
+- [ ] T5 markdown.js + app: label, legenda, rolnamen, kaart-klik, tellers
+- [ ] T6 CSS + browsercheck

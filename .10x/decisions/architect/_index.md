@@ -23,3 +23,4 @@
 - [one-company](one-company.md) — ADR-016: departments.js, company-model.js, company.js
 - [bubble-project-label](bubble-project-label.md) — ADR-017: header-optie in drawBubble
 - [go-to-market-departments](go-to-market-departments.md) — go-to-market-rollen en fase 8 Launch (ADR-018)
+- [ux-polish](ux-polish.md) — camera-module, zoom-API, hover-callback (ADR-019)
