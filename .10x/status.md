@@ -326,3 +326,18 @@
 
 ## Delivery
 - Live op :4747 (service herstart 2026-10-22), 12 afdelingen uit de plugin. Niets gepusht.
+
+# Status — ux-polish
+
+- [ ] Phase 0: Brainstorming
+- [ ] Phase 1: Strategy
+- [ ] Phase 2: Experience Design
+- [ ] Phase 3: Design
+- [ ] Phase 4: Planning
+- [ ] Phase 5: Implementation
+- [ ] Phase 6: Verification
+- [ ] Phase 7: Delivery
+- [ ] Phase 8: Launch
+
+## Progress
+- Idee van de CEO: met UI/UX kijken wat het kantoor mooier, beter en gebruiksvriendelijker maakt.
